@@ -73,10 +73,6 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
             ball.change_x *= -1
 
 
-        # --- Drawing
-        # Set the screen background
-
-
     # Draw the balls
     for ball in ball_list:
         pygame.draw.circle(gameDisplay, BLACK, [ball.x, ball.y], BALL_SIZE[ball.num])

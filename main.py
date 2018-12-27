@@ -1,6 +1,6 @@
 from globalFunc import *
 
-
+#pocetak programa
 pygame.init()
 
 ball_List = ballToList()
