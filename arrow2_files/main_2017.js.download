@@ -1,0 +1,1416 @@
+var strDate = '';
+var strFolderName = '';
+var httpObject = null;
+var bWaiting = 0;
+var nFileID = 0;
+var nW_Preview = 0;//width of preview image( maybe cropped )
+var nH_Preview = 0;
+var nW0_Preview = 0;//width of preview image( no cropped )
+var nH0_Preview = 0;
+var nWOriginal = 200;//width of original image
+var nHOriginal = 200;
+var nW_Slider = 500;//width of image( maybe rotated )
+var nH_Slider = 500;
+var nW_Sel = 0;//width of image( maybe cropped, for selection )
+var nH_Sel = 0;
+var bOrientation = false;
+var bCropped = false;
+var strExt = "jpg";
+var strCropRand ="";
+var nCropX = 0;
+var nCropY = 0;
+var nCropW = 0;
+var nCropH = 0;
+var nDoCrop = 0;
+var nRotate = 0;
+var nUploadPercent = 0;
+var nLastPreviewX = -1;
+var nLastPreviewY = -1;
+var nLastPreviewW = -1;
+var nLastPreviewH = -1;
+
+var strOutputFormat = "jpg";
+var nLevelJPG = 1;
+var nLevelPNG = 1;
+var nLevelGIF = 1;
+var strDownloadURL = "";
+var strViewURL ="";
+var strQRURL ="";
+
+var nFillColorType = 1;
+var strFillColor = "0174DF";
+
+var nRepcolorType = 1;
+var strRepColor = "FFFFFF";
+var bShowTransDiv = false;
+var strTransDivContent = "";
+
+function $get(id)
+{
+    return document.getElementById(id);
+}
+
+function RedText( strInput )
+{
+	return "<font color='#FF0000'>" + strInput + "</font>";
+}
+
+function InitAJAX()
+{
+		if (window.ActiveXObject) 
+			httpObject =  new ActiveXObject("Microsoft.XMLHTTP");
+  		else if (window.XMLHttpRequest) 
+  			httpObject =  new XMLHttpRequest();
+  		else
+  		{
+    			alert("Your Web browser does not support AJAX.");
+    			return;
+  		}
+}
+
+function GetFolderName()
+{
+//	if( strFolderName == '' )
+		strFolderName = Make_random_string( 16 );
+	return strFolderName;
+}
+
+function Make_random_string( nLength )
+{
+	var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghijklmnopqrstuvwxyz";
+	var string_length = nLength;
+	var randomstring = '';
+	for (var i=0; i<string_length; i++) 
+	{
+		var rnum = Math.floor(Math.random() * chars.length);
+		randomstring += chars.substring(rnum,rnum+1);
+	}
+	 
+	return randomstring;
+}
+
+var uploader = new plupload.Uploader({
+	browse_button: 'browse',
+	url: 'upload.php',
+	/*
+	multipart_params : {
+        "folder_name" : "value1"
+    },*/
+  
+	filters : {
+		max_file_size : '121mb',
+		mime_types: [
+			{title : "Images", extensions : "jpg,jpeg,png,gif,bmp"}/*,
+			{title : "Zip files", extensions : "zip"}*/
+		]
+	}  
+});
+
+uploader.init();
+
+uploader.bind('FilesAdded', function(up, files)
+{
+	var maxfiles = 1;
+	if(up.files.length > maxfiles )
+	{
+	//	up.splice(maxfiles);
+	//	alert('no more than '+maxfiles + ' file(s)');
+		$get("filelist").innerHTML = RedText( "You can only upload one image at a time." );
+		uploader.splice();
+		return;
+	}
+	
+	strFolderName = GetFolderName();
+	
+	up.settings.multipart_params = {  "date": strDate, "folder_name" : strFolderName };
+	
+	var html = '';
+	var num = 0;
+	plupload.each(files, function(file) 
+	{
+		var strFileName = file.name;
+		if( strFileName.length > 30 )
+		{
+			var strImgExt = strFileName.split('.').pop();
+			strFileName = strFileName.substring( 0, 30 ) + "~1." + strImgExt;
+		}
+		html += '<div class="div_file" id="' + file.id + '">Uploading ' + strFileName + '<b></b></div>';    
+		html += '<div id="div_percent"></div>';
+		html += '<div class="div_del" id="div_del" onclick="deletefile(\'' + file.id  +   '\');">Cancel</div>';
+		nFileID = file.id;
+
+    
+    	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+    	ias.cancelSelection();
+    	ias.setOptions({ hide: true });
+    	ias.setOptions({ disable: true });
+		ias.update();
+		
+		var x = $get("crop_box");
+  		x.style.width = 0 + "px";
+		x.style.height = 0+ "px";
+		x.style.visibility = 'hidden'; 		
+		
+		bOrientation = false;
+		nRotate = 0;
+		nDoCrop = 0;
+		Deselect();
+		$get( "no_rotate" ).checked = true;
+		
+		$get( "format_jpg" ).disabled = false;
+		$get( "format_png" ).disabled = false;
+		$get( "format_bmp" ).disabled = false;		
+		$get( "label_jpg" ).className = "radio_label";
+		$get( "label_png" ).className = "radio_label";
+		$get( "label_bmp" ).className = "radio_label";			
+		
+///		$get( "Text2Resize" ).innerHTML = "";
+		$get( "output_file_info" ).innerHTML = 'Press the "Resize Image" button to crop, resize and optimize your image.';
+    
+    	nUploadPercent = 0;
+		up.start();
+		
+		num++;
+ 	 });
+  
+	document.getElementById('filelist').innerHTML = html;
+});
+ 
+uploader.bind('UploadProgress', function(up, file)
+{
+	if( file.percent >= nUploadPercent )
+	{
+		nUploadPercent = file.percent;
+  		$get( "div_percent" ).innerHTML =  nUploadPercent + "%";
+  	}
+//	if( file.percent == 100 )
+//		$get( "filelist" ).innerHTML = "Successfully uploaded, processing your image...";
+});
+ 
+uploader.bind('Error', function(up, err) 
+{
+		//document.getElementById('filelist').innerHTML += "\nError #" + err.code + ": " + err.message;
+		
+		var strErrorMsg = err.message;
+		if( strErrorMsg == "File extension error." )
+			strErrorMsg = "You can only upload an image in JPEG, PNG, GIF or BMP format.";
+		else if( strErrorMsg == "File size error." )
+			strErrorMsg = "The maximum file size allowed is 120MB.";		
+	
+		$get("filelist").innerHTML =  RedText( strErrorMsg );
+});
+
+uploader.bind('FileUploaded', function() 
+{
+	if (uploader.files.length == (uploader.total.uploaded + uploader.total.failed)) 
+	{
+		//alert( uploader.total.uploaded );          
+//		hidediv(  'filelist' );
+		
+		GetImageInfo();
+		uploader.splice();
+	}
+            
+});
+
+ /*
+document.getElementById('start-upload').onclick = function()
+{
+	uploader.start();
+};
+*/
+
+function hidediv( id )
+{
+//	$get(id).style.visibility = 'hidden';
+//	$get(id).style.height = '0px';	
+}
+
+function deletefile( id ) 
+{
+	$get( "filelist" ).innerHTML = " ";
+	
+	uploader.removeFile(  uploader.getFile(id) );
+}
+
+function CancelUpload()
+{
+	uploader.removeFile(  uploader.getFile( nFileID ) );
+}
+
+
+function $get(id)
+{
+    return document.getElementById(id);
+}
+
+function SelectArea()
+{
+	var x1 = parseInt( $get( "x1" ).value );
+	var y1 = parseInt($get( "y1" ).value );
+	var w =  parseInt($get( "w" ).value );
+	var h =  parseInt($get( "h" ).value );
+	
+	if( x1 < 0 || y1 < 0 || w <= 0 || h <= 0 ) 
+	{
+		return;
+	}
+
+	var x2 = x1 + w;
+	var y2 = y1 + h;
+	
+	x1 = Math.round( x1 / nScale );
+	y1 = Math.round( y1 / nScale );
+	
+	x2 = Math.round( x2 / nScale );
+	y2 = Math.round( y2 / nScale );
+	
+//	$get( "Text2Crop" ).innerHTML = x1.toString() + "," + x2.toString() + "," + y1.toString() + "," + y2.toString();
+	
+	 if( x1 < 0 || x1 > nW_Preview ) x1 = 0;
+ 	if( y1 < 0 || y1 > nH_Preview ) y1 = 0;
+ 	if( x2 > nW_Preview ) x2 = nW_Preview;
+ 	if( y2 > nH_Preview ) y2 = nH_Preview;
+	
+	nLastPreviewX = x1;
+	nLastPreviewY = y1;
+	nLastPreviewW = x2 - x1;
+	nLastPreviewH = y2 - y1;
+	
+	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+	ias.setSelection( x1, y1, x2, y2, true);
+	ias.setOptions({ show: true });
+	ias.update();	
+}
+
+function Select_All()
+{
+	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+	ias.setSelection( 0, 0, nW_Preview, nH_Preview, true);
+	ias.setOptions({ show: true });
+	ias.update();		
+	
+	$get( "x1" ).value = 0;
+	$get( "y1" ).value = 0;
+	$get( "w" ).value = nW_Sel;
+	$get( "h" ).value = nH_Sel;	
+}
+
+function Deselect()
+{
+	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+//	ias.setSelection( 0, 0, 0, 0, true);
+//	ias.setOptions({ show: true });
+	ias.cancelSelection();
+//	ias.update();	
+	
+	$get( "x1" ).value = 0;
+	$get( "y1" ).value = 0;
+	$get( "w" ).value = 0;
+	$get( "h" ).value = 0;
+	
+	nLastPreviewX = -1;
+	nLastPreviewY = -1;
+	nLastPreviewW = -1;
+	nLastPreviewH = -1;	
+}
+
+function CancelSelect()
+{
+	Deselect();
+}
+
+function OnRevert()
+{
+	LoadImage( "myimg/" + strFolderName + "-pic-" + strExt, nW0_Preview, nH0_Preview, 1 );
+	
+	nW_Slider = nWOriginal;
+	nH_Slider = nHOriginal;
+	
+	nW_Sel = 	nWOriginal;
+	nH_Sel = 		nHOriginal;
+								
+	ResetResizePercentSlider();
+	
+	bOrientation = false;
+	nRotate = 0;
+	$get( "no_rotate" ).checked = true;
+}
+
+function ResetResizePercentSlider()
+{
+	$get( "InputResizeParent" ).value = 100;
+	A_SLIDERS[0].f_setValue( 100, true );	
+}
+
+function OnRotate( nAngle )
+{
+	nRotate = nAngle;
+	
+	if( nAngle == 90 || nAngle == 270 )
+	{
+		if( !bOrientation )
+		{
+			bOrientation = true;
+			var tmp_x = nW_Slider;
+			nW_Slider  = nH_Slider;
+			nH_Slider	  = tmp_x;
+			ResetResizePercentSlider();		
+		}		
+	}
+	else
+	{
+		if( bOrientation )
+		{
+			bOrientation = false;
+			var tmp_x = nW_Slider;
+			nW_Slider  = nH_Slider;
+			nH_Slider	  = tmp_x;
+			ResetResizePercentSlider();			
+		}	
+	}	
+	
+	return;
+}
+
+
+function LoadImage( strImg, w, h, nMsgType ) 
+{
+    var img = new Image();
+    var x = $get("crop_box");
+    var y = $get("crop_parent");
+   	var z = $get("blank_div"); 
+    
+    
+	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+	ias.cancelSelection();   
+
+    img.onload = function() {
+    		
+    	bWaiting = 0;
+    		
+    	nW_Preview = w;
+    	nH_Preview = h;
+    	
+        x.src = img.src;
+        
+  		x.style.width = w + "px";
+		x.style.height = h+ "px";
+		x.style.visibility = 'visible'; 
+		
+  		y.style.width = w + "px";
+		y.style.height = h+ "px";		
+		y.style.visibility = 'visible'; 
+		
+	//	var w_z = 1000 - w;
+  	//	z.style.width = w_z + "px";
+	//	z.style.height = h+ "px";			
+		
+		if( nMsgType == 1 )
+		{
+			$get( "filelist" ).innerHTML = "You can crop and resize your image now. <strong>Your image will be deleted in 1 hour.</strong>";
+			$get( "Text2Crop" ).innerHTML = 'Press the "Crop" button to crop your image.';
+		
+    		ias.setOptions({ enable: true, hide: false });
+			ias.update();
+			
+			bCropped = false;
+			$get( "btn_crop" ).innerHTML = "Crop";
+		}
+		else
+		{
+			$get( "Text2Crop" ).innerHTML = "Unsatisfied with the result? You can undo the change and crop it again.";
+						
+    		ias.setOptions({ disable:true, hide: true });
+			ias.update();			
+			
+			$get( "btn_crop" ).innerHTML = "Undo";	
+		}
+		
+		$get( "x1" ).value = 0;
+		$get( "y1" ).value = 0;
+//		$get( "w" ).value = 0;
+//		$get( "h" ).value = 0;			
+    };
+
+    img.src = strImg;
+}
+
+function GetImageInfo()
+{
+		if( bWaiting == 1 )
+		{
+			alert( "Please wait a few seconds." );
+			return;
+		}
+		
+//		$get( "filelist" ).innerHTML = "Successfully uploaded, processing your image...";
+	
+		if ( httpObject == null ) 
+			InitAJAX(); 	
+
+  		var randomstring = Make_random_string( 5 );
+		bWaiting = 1;
+			
+    	httpObject.open("GET", "GetImgInfo.php?folder=" + strFolderName + "&randomstr=" + randomstring,  true);    		 			
+  		
+  		if ( httpObject != null ) 
+  		{
+  				httpObject.onreadystatechange = function()
+				{
+  					if( httpObject.readyState == 4  )
+  					{	
+  						//bWaiting = 0;
+						var str=httpObject.responseText;
+						var strOut = "";
+  				     
+  				    	var nRes = str.split(",");
+  				     	var nNum = nRes[ 0 ];
+  				    	 					    	 						
+						if( nNum == 1 )
+						{							
+							strOut = "Downloading the preview image...";
+							
+							$get( "x1" ).value = 0;
+							$get( "y1" ).value = 0;
+							$get( "w" ).value = 0;
+							$get( "h" ).value = 0;	
+							
+							LoadImage( "myimg/" + strFolderName + "-pic-" + nRes[ 5 ], nRes[ 1 ], nRes[ 2 ], 1 );
+							
+							nScale = nRes[ 3 ] / nRes[ 1 ];
+							
+							nWOriginal = nRes[ 3 ];
+							nHOriginal = nRes[ 4 ];
+							
+							nW_Sel = nWOriginal;
+							nH_Sel = nHOriginal;
+							
+							nW_Slider = nWOriginal;
+							nH_Slider = nHOriginal;
+							
+							nW0_Preview = nRes[ 1 ];
+							nH0_Preview = nRes[ 2 ];
+							
+							ResetResizePercentSlider();
+							
+							strExt = nRes[ 5 ];
+							
+							
+							var strRadio2Check = "format_" + strExt;
+							$get( strRadio2Check ).checked = true;
+							OnSelFormat( strExt );
+							
+							if( strExt == 'gif' )
+							{
+								$get( "format_jpg" ).disabled = true;
+								$get( "format_png" ).disabled = true;
+								$get( "format_bmp" ).disabled = true;
+								
+								$get( "label_jpg" ).className = "label_disabled";
+								$get( "label_png" ).className = "label_disabled";
+								$get( "label_bmp" ).className = "label_disabled";				
+							}
+						}							
+						else
+						{
+							strOut = "Failed to upload. Invalid file type or image dimension.";		
+							bWaiting = 0;				
+						}
+						
+						$get( "filelist" ).innerHTML = strOut;
+    					}
+    				}
+    				
+    				httpObject.send();
+		}
+}
+
+function Crop_or_undo()
+{
+	if( bWaiting == 1 )
+	{
+		alert( "Please wait a few seconds." );
+		return;
+	}	
+	
+	if( bCropped == false )
+		DoCrop();
+	else
+	{
+		OnRevert();
+		nDoCrop = 0;
+		Deselect();
+	}
+}
+
+function DoCrop()
+{
+		if( bWaiting == 1 )
+		{
+			alert( "Please wait a few seconds." );
+			return;
+		}
+		
+		var x1 = parseInt( $get( "x1" ).value );
+		var y1 = parseInt($get( "y1" ).value );
+		var w =  parseInt($get( "w" ).value );
+		var h =  parseInt($get( "h" ).value );
+	
+		if( x1 < 0 || y1 < 0 || w < 0 || h < 0 ) 
+		{
+			return;
+		}
+		
+		 nCropX = x1;
+		 nCropY = y1;
+		 nCropW = w;
+		 nCropH = h;
+		 nDoCrop = 1;
+	/*	
+		x1 = Math.floor( x1 / nScale );
+		y1 = Math.floor( y1 / nScale );
+	
+		w = Math.ceil( w / nScale );
+		h = Math.ceil( h / nScale );
+	
+		if( x1 < 0 ) x1 = 0;
+ 		if( y1 < 0 ) y1 = 0;
+ 		if( x1 + w > nW_Preview ) w = nW_Preview - x1;
+ 		if( y1 + h > nH_Preview ) h = nH_Preview - y1;		*/
+		
+		
+		$get( "Text2Crop" ).innerHTML = "Please wait a few seconds...";
+	
+		if ( httpObject == null ) 
+			InitAJAX(); 	
+
+  		var randomstring = Make_random_string( 5 );
+		bWaiting = 1;
+			
+    	httpObject.open("GET", "doCrop.php?folder=" + strFolderName + "&x=" + x1 + "&y=" + y1 + "&w=" + w + "&h=" + h + "&randomstr=" + randomstring,  true); 	  			
+  		
+     	var ias = $('#crop_box').imgAreaSelect({ instance: true });
+    		ias.setOptions({ disable: true });
+		ias.update();	 		
+  		
+  		if ( httpObject != null ) 
+  		{
+  				httpObject.onreadystatechange = function()
+				{
+  					if( httpObject.readyState == 4  )
+  					{	
+  					//	bWaiting = 0;
+						var str=httpObject.responseText;
+						var strOut = "";
+  				     
+  				    	 var nRes = str.split(",");
+  				     	var nNum = nRes[ 0 ];
+  				     	var strRand = nRes[ 3 ];
+  				    	 					    	 						
+						if( nNum == 1 )
+						{							
+							strOut = "Downloading the preview image...";		
+							LoadImage( "myimg/" + strFolderName + "-cropped" + strRand + "-" + strExt, nRes[ 1 ], nRes[ 2 ], 2 );	
+							
+							strCropRand = strRand;
+							
+							nW_Slider  = nRes[ 4 ];
+							nH_Slider	  = nRes[ 5 ];
+							
+							nW_Sel  = nRes[ 4 ];
+							nH_Sel	  = nRes[ 5 ];						
+	
+							if( nRotate == 90 || nRotate == 270 )
+							{
+								var tmp_x = nW_Slider;
+								nW_Slider  = nH_Slider;
+								nH_Slider	  = tmp_x;	
+							}
+													
+							ResetResizePercentSlider();		
+							
+							bCropped = true;						
+						}				
+						else if( nNum == 99 )
+						{
+							strOut = "Exceeded max allowed times.";		
+							bWaiting = 0;
+						}									
+						else
+						{
+							strOut = "Failed to crop.";			
+							bWaiting = 0;			
+							
+							OnRevert();
+							nDoCrop = 0;						
+							Deselect();		
+						//	pausecomp( 3000 );			
+							alert( strOut );
+						}
+						
+						$get( "Text2Crop" ).innerHTML = strOut;
+    					}
+    				}
+    				
+    				httpObject.send();
+		}	
+}
+
+function pausecomp(millis)
+{
+    var date = new Date();
+    var curDate = null;
+    do { curDate = new Date(); }
+    while(curDate-date < millis);
+}
+
+function DoResize()
+{
+		if( bWaiting == 1 )
+		{
+			alert( "Please wait a few seconds." );
+			return;
+		}
+		
+		var nNewWidth 	= Math.round( $get( "InputResizeW" ).value );
+		var nNewHeight 	= Math.round($get( "InputResizeH" ).value );
+	
+		if( nNewWidth < 0 || nNewHeight < 0 ) 
+		{
+			return;
+		}
+		
+		$get( "output_file_info" ).innerHTML = "Please wait a few seconds...";
+///		$get( "Text2Resize" ).innerHTML = "";
+	
+		if ( httpObject == null ) 
+			InitAJAX(); 	
+
+  		var randomstring = Make_random_string( 5 );
+		bWaiting = 1;
+		
+		var nLevelOpti = 1;
+		var nQualityOpti = 0;
+		if( strOutputFormat == "jpg" )
+		{
+			nLevelOpti = nLevelJPG;
+			nQualityOpti = parseInt( $get( "InputJpgQuality" ).value );
+		}
+		else if( strOutputFormat == "png" )
+		{
+			nLevelOpti = nLevelPNG;
+		}	
+		else if( strOutputFormat == "gif" )
+		{
+			nLevelOpti = nLevelGIF;
+			nQualityOpti = parseInt( $get( "InputGIFQuality" ).value );
+		}
+		else
+		{
+			nLevelOpti = 1;
+			nQualityOpti = 0;			
+		}		
+		
+		var nResizeW 	= nNewWidth;
+		var nResizeH 	= nNewHeight;
+		
+		if( nRepcolorType == 3 )
+		{
+			var nR = parseInt( $get( "R" ).value );
+			var nG = parseInt( $get( "G" ).value );
+			var nB = parseInt( $get( "B" ).value );
+			
+			strRepColor = rgbToHex( nR, nG, nB );
+		}
+		else if( nRepcolorType == 4 )
+		{
+			strRepColor = $get( "HEX" ).value;
+		}
+		
+		var nFuzz = 0;
+		if( nRepcolorType != 1 )
+			nFuzz = parseInt( $get( "fuzz" ).value );
+		
+			
+    	httpObject.open("GET", "doResize201507.php?folder=" + strFolderName + "&nDoCrop=" + nDoCrop  + "&nCropX=" + nCropX  + "&nCropY=" + nCropY + "&nCropW=" + nCropW + "&nCropH=" + nCropH + "&nRotate=" + nRotate + "&nResizeW=" + nResizeW +  "&nResizeH=" + nResizeH + "&format=" + strOutputFormat + "&OptiLevel=" + nLevelOpti + "&Quality=" + nQualityOpti + "&nFillColorType=" + nFillColorType + "&strFillColor=" + strFillColor + "&nRepcolorType=" + nRepcolorType + "&strRepColor=" + strRepColor + "&nFuzz=" + nFuzz + "&randomstr=" + randomstring,  true); 	  			
+     
+  						  		
+  		if ( httpObject != null ) 
+  		{
+  				httpObject.onreadystatechange = function()
+				{
+  					if( httpObject.readyState == 4  )
+  					{	
+  						bWaiting = 0;
+						var str=httpObject.responseText;
+						var strOut = "";
+  				     
+  				    	 	var nRes = str.split(",");
+  				     	var nNum = nRes[ 0 ];
+  				     	var strFileInfo = '<div class="img_div_left">Old Image: </div><div class="img_div_right">';
+  				    	 					    	 						
+						if( nNum == 100 )
+						{		
+							var strRandx = nRes[ 7 ];
+							var strFilenamex = nRes[ 8 ];
+							var strExtx = nRes[ 9 ];
+							
+							strDownloadURL = "mypic/" + strFolderName + "/" + strRandx + "/" + strFilenamex + "." + strExtx;
+							strViewURL= "viewimg/" + strFolderName + "/" + strRandx + "/" + strFilenamex + "." + strExtx;							
+							strQRURL =  "viewimg/" + strFolderName + "/" + strRandx + "/qr.png";
+							
+						//	strOut = '<a href="' + strDownloadURL + '" target="_blank">Download</a>';					
+						
+							$get( "Text2Resize" ).style.textIndent = "0px";
+							
+							strOut = '<div class="button download" id="viewimage" onclick="ViewPic();">	View Image	</div>';
+							
+							strOut += '<div class="button download" id="download" onclick="DownloadPic();">	Download	Image</div>';
+							strOut += '<div class="button download" id="ProxyBtn" onclick="newwin(\'https://proxy.toolur.com\');">	Proxy Sites</div>';
+							strOut += '<div class="button download" id="viewqr" title="Scan the QR code with your mobile phone to view the image, then hold down on the image to download it." onclick="ViewQR();">	Show QR Code	</div>';
+							strOut += '<div class="button download" id="newresize" onclick="newtab();">	Resize New Image	</div>';
+							
+							
+							var strImgW0 = nRes[ 1 ];
+							var strImgH0 = nRes[ 2 ];
+							var strImgSize0  =  nRes[ 3 ];//numberWithCommas
+							var strImgW1 = nRes[ 4 ];
+							var strImgH1 = nRes[ 5 ];
+							var strImgSize1  =  nRes[ 6 ];
+											
+							strImgSize0 =  FormatFileSize( strImgSize0 );
+							strImgSize1 =  FormatFileSize( strImgSize1 );
+					
+							strFileInfo += strImgW0 + 'x' + strImgH0 + ' pixels( ' + strImgSize0 + ' )</div><div class="img_div_left">New Image: </div><div class="img_div_right"> ' + strImgW1 + 'x' + strImgH1 + ' pixels( ' + strImgSize1 + ' )</div>';
+							
+							strFileInfo += '<br>';
+							
+							strFileInfo += '<a href="#" onclick="ViewPic();return false;">View Image</a>, ';
+							strFileInfo += '<a href="' + strDownloadURL + '" download="Webp.net-resizeimage.' + strExtx + '">Download	Image</a>, ';
+							strFileInfo += '<a href="#" onclick="ViewQR();return false;">Show QR Code</a>, ';
+							strFileInfo += '<a href="#" onclick="newtab();return false;">	Resize Another Image</a>';
+							
+											
+						}			
+						else if( nNum == 99 )
+						{
+							strFileInfo = "Exceeded max allowed times.";		
+						}		
+						else if( nNum == 109 )
+						{
+							strFileInfo = "Please specify a smaller image size.";		
+						}									
+						else
+						{
+							strFileInfo = "Failed to resize your image.";// + nNum.toString();						
+						}
+						
+				///		$get( "Text2Resize" ).innerHTML = strOut;
+						
+						
+						var nRandomNum = Math.floor((Math.random() * 100) + 1);
+				//		if( nRandomNum < 100 )
+				///			strFileInfo += "<br><a href='https://proxy.toolur.com/' target='_blank'>Free Proxy</a>, <a href='http://compressimage.toolur.com/' target='_blank'>Image Compressor</a>, <a href='http://pdftojpg.me' target='_blank'>PDFtoJPG.me</a>, <a href='http://base64decode.toolur.com/' target='_blank'>Base64 Decode</a>, <a href='http://EXIFViewer.toolur.com/' target='_blank'>EXIF Viewer</a>, <a href='http://passwordsgenerator.net' target='_blank'>Password Generator</a>, <a href='http://gifcreator.me' target='_blank'>GIFCreator.me</a>";
+				//		else
+				//			strFileInfo += "<br>You may also like: <a href='http://pdftojpg.me' target='_blank'>PDFtoJPG.me</a> , <a href='http://gifmaker.me' target='_blank'>GIFMaker.me</a>, <a href='http://passwordsgenerator.net' target='_blank'>PasswordsGenerator.net</a> and <a href='http://www.buzzfeed.com' target='_blank'>BuzzFeed</a> ";
+						$get( "output_file_info" ).innerHTML = strFileInfo;
+    					}
+    				}
+    				
+    				httpObject.send();
+		}		
+}
+
+function FormatFileSize( nSize )
+{
+	var strOutputSize = "";
+	if( nSize >= 1048576 )
+		strOutputSize =  Math.round( nSize / 1048576 * 10) / 10   + " MB";
+	else if( nSize >= 1024 )
+		strOutputSize =  Math.round( nSize / 1024 * 10) / 10   + " KB";								
+	else
+		strOutputSize = numberWithCommas( nSize ) + " bytes ";	
+		
+	strOutputSize = "<strong>" + strOutputSize + "</strong>";
+	return strOutputSize;
+}			
+
+function numberWithCommas(x)
+{
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function DownloadPic()
+{
+	var win = window.open( strDownloadURL, '_blank' );
+	win.focus(); 
+}
+
+function ViewPic()
+{
+	var win = window.open( strViewURL, '_blank' );
+	win.focus(); 
+}
+
+function ViewQR()
+{
+	var win = window.open( strQRURL, '_blank' );
+	win.focus(); 
+}
+
+function newtab()
+{
+	var win = window.open( "http://resizeimage.net/", '_blank' );
+	win.focus(); 
+}
+
+function newwin( strURL )
+{
+	var win = window.open( strURL, '_blank' );
+	win.focus(); 
+}
+
+function ChangeRatio()
+{
+    	var ias = $('#crop_box').imgAreaSelect({ instance: true });  		
+    	ias.cancelSelection();
+    		
+ 		var bFreeRatio = $get("free_ratio").checked;   		
+    		
+    	if( bFreeRatio )
+    	{
+  			ias.setOptions({ aspectRatio: '0:1' });
+  		
+    		ias.setOptions({ enable: true });
+			ias.update();		
+		}
+		else
+    	{
+ 			var w_tmp = parseInt( $get( "w_radio" ).value );
+			var h_tmp = parseInt($get( "h_radio" ).value );		
+			if( w_tmp < 1 || h_tmp < 1 )
+			{
+				return;
+			}
+			
+			var strNewOption = {	aspectRatio: '1:1',	enable: true };
+			
+			strNewOption.aspectRatio = w_tmp.toString() + ":" + h_tmp.toString();
+			
+    		ias.setOptions( strNewOption );
+  		
+			ias.update();		
+		}	
+}
+
+function SelectAll(id)
+{
+//	$get(id).focus();
+//	$get(id).select();
+}
+
+
+function OnSelectionType()
+{
+	$get('w_radio').disabled = true;
+	$get('h_radio').disabled = true;	
+	
+ 	var bFixedRatio = $get("fixed_ratio").checked;   		
+    		
+    if( bFixedRatio )	
+	{
+		$get('w_radio').disabled = false;
+		$get('h_radio').disabled = false;			
+	}	
+			
+	ChangeRatio();
+}
+
+function UpdateText( nValue, bUpdateWH )
+{
+	$get('InputResizeParent').value = nValue;
+	
+	if( !bUpdateWH )
+	{
+		return;
+	}
+		
+	var newW = nValue / 100 * nW_Slider;
+	newW = Math.round( newW );
+	if( newW < 0 ) newW = 0;
+	if( newW > 10000 )newW = 10000;
+	
+//	var newH = nValue / 100 * nH_Slider;
+//	newH = Math.floor( newH );
+
+	var newH = Math.round( nH_Slider * newW / nW_Slider )
+	if( newH < 0 ) newH = 0;
+	if( newH > 10000 )
+	{
+		newH = 10000;
+	}
+	
+	$get('InputResizeW').value = newW;
+	$get('InputResizeH').value = newH;
+}
+
+function UpdateText2( nValue )
+{
+	$get('InputJpgQuality').value = nValue;
+}
+
+function UpdateText3( nValue )
+{
+	$get('InputGIFQuality').value = nValue;
+}
+
+function UpdateResizeWH( bUpdateFromW )
+{
+	if( $get("FixedAspectRatioCheckBox").checked )
+	{
+		var nW_tmp = 0;
+		var nH_tmp  = 0;
+		
+		if( bUpdateFromW )
+		{
+			nW_tmp = Math.round( $get( "InputResizeW" ).value );
+			
+			if( nW_tmp >= 0 /*&& nW_tmp <= nW_Slider*/ )
+			{
+				var nPercent = Math.round( nW_tmp * 100 / nW_Slider  );
+				nH_tmp = Math.round( nW_tmp * nH_Slider / nW_Slider );
+				$get('InputResizeH').value = nH_tmp;
+				
+				A_SLIDERS[0].f_setValue( nPercent, false );
+			} 
+		}
+		else
+		{
+			nH_tmp = parseInt( $get( "InputResizeH" ).value );
+			
+			if( nH_tmp >= 0 /*&& nH_tmp <= nH_Slider*/ )
+			{
+				var nPercent = Math.round( nH_tmp * 100 / nH_Slider  );
+				nW_tmp = Math.round( nH_tmp * nW_Slider / nH_Slider );
+				$get('InputResizeW').value = nW_tmp;
+				
+				A_SLIDERS[0].f_setValue( nPercent, false );
+			} 			
+		}
+	}
+}
+
+var A_TPL1h = {
+		'b_Enable': 1,
+		'n_controlWidth': 530,
+		'n_controlHeight': 30,
+		'n_sliderWidth': 30,
+		'n_sliderHeight': 30,
+		'n_pathLeft' : 0,
+		'n_pathTop' : 0,
+		'n_pathLength' : 500,
+		's_imgControl': 'image/btm2.png',
+		's_imgControlDisable': 'image/btm_disable2.png',
+		's_imgSlider': 'image/circle.png',
+		's_imgSliderDisable': 'image/circle_disable.png',
+		'n_zIndex': 1
+	}
+	var A_INIT1h = {
+		's_name': 'InputResizeParent',
+		'n_minValue' : 0,
+		'n_maxValue' : 100,
+		'n_value' : 100,
+		'n_step' : 1
+	}
+
+	new slider(A_INIT1h, A_TPL1h, UpdateText, 'SliderResizeParent' );	
+	
+	
+	var A_TPL2h = {
+		'b_Enable': 1,
+		'n_controlWidth': 530,
+		'n_controlHeight': 30,
+		'n_sliderWidth': 30,
+		'n_sliderHeight': 30,
+		'n_pathLeft' : 0,
+		'n_pathTop' : 0,
+		'n_pathLength' : 500,
+		's_imgControl': 'image/btm2.png',
+		's_imgControlDisable': 'image/btm_disable2.png',
+		's_imgSlider': 'image/circle.png',
+		's_imgSliderDisable': 'image/circle_disable.png',
+		'n_zIndex': 1
+	}
+	var A_INIT2h = {
+		's_name': 'InputJpgQuality',
+		'n_minValue' : 0,
+		'n_maxValue' : 100,
+		'n_value' : 91,
+		'n_step' : 1
+	}
+
+	new slider(A_INIT2h, A_TPL2h, UpdateText2, 'SliderJpgQualityParent' );		
+	
+	var A_TPL3h = {
+		'b_Enable': 1,
+		'n_controlWidth': 530,
+		'n_controlHeight': 30,
+		'n_sliderWidth': 30,
+		'n_sliderHeight': 30,
+		'n_pathLeft' : 0,
+		'n_pathTop' : 0,
+		'n_pathLength' : 500,
+		's_imgControl': 'image/btm2.png',
+		's_imgControlDisable': 'image/btm_disable2.png',
+		's_imgSlider': 'image/circle.png',
+		's_imgSliderDisable': 'image/circle_disable.png',
+		'n_zIndex': 1
+	}
+	var A_INIT3h = {
+		's_name': 'InputGIFQuality',
+		'n_minValue' : 1,
+		'n_maxValue' : 256,
+		'n_value' : 256,
+		'n_step' : 1
+	}
+
+	new slider(A_INIT3h, A_TPL3h, UpdateText3, 'SliderGIFQualityParent' );			
+	A_SLIDERS[2].f_setValue( 256 );
+	OnSelFormat( 'jpg' );
+	A_SLIDERS[1].Enable( 0 );
+	$get( "InputJpgQuality" ).disabled = true;	
+	A_SLIDERS[2].Enable( 0 );
+	$get( "InputGIFQuality" ).disabled = true;		
+	
+function OnJpgOpt( nType )
+{
+	if( nType == 1 )
+	{
+		A_SLIDERS[1].Enable( 0 );
+		$get( "InputJpgQuality" ).disabled = true;	
+	}
+	else
+	{
+		A_SLIDERS[1].Enable( 1 );
+		$get( "InputJpgQuality" ).disabled = false;			
+	}	
+	
+	nLevelJPG = nType;
+}	
+
+function OnPngOpt( nType )
+{
+	nLevelPNG = nType;
+}
+
+function OnGIFOpt( nType )
+{
+	if( nType == 1 )
+	{
+		A_SLIDERS[2].Enable( 0 );
+		$get( "InputGIFQuality" ).disabled = true;	
+	}
+	else
+	{
+		A_SLIDERS[2].Enable( 1 );
+		$get( "InputGIFQuality" ).disabled = false;			
+	}	
+	
+	nLevelGIF = 	nType;
+}
+	
+function HideDIV( nID )
+{
+	$get( nID ).style.visibility = 'hidden'; 	
+	$get( nID ).style.height = '0px'; 
+}
+
+function ShowDIV( nID )
+{
+	$get( nID ).style.visibility = 'visible'; 
+	
+	if( nID == 'sl1slider' || 	nID == 'sl2slider' )
+		$get( nID ).style.height = '30px'; 
+	else
+		$get( nID ).style.height = '40px'; 
+}
+	
+function OnSelFormat( imgFormat )
+{
+	strOutputFormat = imgFormat;
+	var strTips = "Optimization options:";
+	if( imgFormat == 'jpg' )
+	{
+		ShowDIV( 'JPG_OPT_OPTIONS1' );
+		ShowDIV( 'JPG_OPT_OPTIONS2' );
+		ShowDIV( 'JPG_OPT_OPTIONS3' );
+		
+		HideDIV( 'PNG_OPT_OPTIONS1' );
+		
+		HideDIV( 'GIF_OPT_OPTIONS1' );
+		HideDIV( 'GIF_OPT_OPTIONS2' );
+		HideDIV( 'GIF_OPT_OPTIONS3' );
+		
+		ShowDIV( 'sl1slider' );
+		HideDIV( 'sl2slider' );
+	}
+	else if ( imgFormat == 'png' )
+	{
+		HideDIV( 'JPG_OPT_OPTIONS1' );
+		HideDIV( 'JPG_OPT_OPTIONS2' );
+		HideDIV( 'JPG_OPT_OPTIONS3' );
+		
+		ShowDIV( 'PNG_OPT_OPTIONS1' );
+		
+		HideDIV( 'GIF_OPT_OPTIONS1' );
+		HideDIV( 'GIF_OPT_OPTIONS2' );
+		HideDIV( 'GIF_OPT_OPTIONS3' );
+		
+		HideDIV( 'sl1slider' );
+		HideDIV( 'sl2slider' );
+		
+		var nNewWidth 	= Math.round( $get( "InputResizeW" ).value );
+		var nNewHeight 	= Math.round($get( "InputResizeH" ).value );
+		
+		if( nNewWidth * nNewHeight > 1024 * 1024 )
+			strTips = 'Optimization options( if the output PNG image is larger than 1024 x 1024 pixels, then only the "Default compression" level will be used ):';
+	}
+	else if ( imgFormat == 'gif' )
+	{
+		HideDIV( 'JPG_OPT_OPTIONS1' );
+		HideDIV( 'JPG_OPT_OPTIONS2' );
+		HideDIV( 'JPG_OPT_OPTIONS3' );
+		
+		HideDIV( 'PNG_OPT_OPTIONS1' );
+		
+		ShowDIV( 'GIF_OPT_OPTIONS1' );
+		ShowDIV( 'GIF_OPT_OPTIONS2' );
+		ShowDIV( 'GIF_OPT_OPTIONS3' );
+		
+		HideDIV( 'sl1slider' );
+		ShowDIV( 'sl2slider' );
+	}
+	else
+	{
+		HideDIV( 'JPG_OPT_OPTIONS1' );
+		HideDIV( 'JPG_OPT_OPTIONS2' );
+		HideDIV( 'JPG_OPT_OPTIONS3' );
+		
+		HideDIV( 'PNG_OPT_OPTIONS1' );
+		
+		HideDIV( 'GIF_OPT_OPTIONS1' );
+		HideDIV( 'GIF_OPT_OPTIONS2' );
+		HideDIV( 'GIF_OPT_OPTIONS3' );
+		
+		HideDIV( 'sl1slider' );
+		HideDIV( 'sl2slider' );
+		
+		strTips = "The BMP format is not Web friendly, you can save your image as .BMP format, but it's not recommended.";
+	}
+	
+	$get( "OptiTips" ).innerHTML = strTips;
+}	
+
+var nScale = 1.0;
+
+function preview(img, selection) 
+{
+    if (!selection.width || !selection.height)
+    {
+		$('#x1').val( 0 );
+		$('#y1').val( 0 );
+		$('#w').val( 0 );
+		$('#h').val( 0 );       	
+		return;
+	}
+ 
+ 	var n_x1 = Math.round( selection.x1 * nScale );
+ 	var n_y1 = Math.round( selection.y1 * nScale );
+ 	var n_w1 = Math.round( selection.width * nScale );
+ 	var n_h1 = Math.round( selection.height * nScale );
+ 	
+// 	$get( "Text2Crop" ).innerHTML = selection.width.toString() + "," + selection.height.toString();
+ 	
+ 	if( n_x1 < 0 ) n_x1 = 0;
+ 	if( n_y1 < 0 ) n_y1 = 0;
+ 	if( n_w1 > nWOriginal - n_x1 ) n_w1 = nWOriginal - n_x1;
+ 	if( n_h1 > nHOriginal - n_y1 ) n_h1 = nHOriginal - n_y1;
+
+	if( nLastPreviewX != selection.x1 )
+	{
+		$('#x1').val( n_x1 );
+		nLastPreviewX = selection.x1;
+	}
+	
+	if( nLastPreviewY != selection.y1 )
+	{
+		$('#y1').val( n_y1 );
+		nLastPreviewY = selection.y1;
+	}
+		
+	if( nLastPreviewW != selection.width )
+	{
+		$('#w').val( n_w1 );
+		nLastPreviewW = selection.width;
+	}
+	
+	if( nLastPreviewH != selection.height )		
+	{
+		$('#h').val( n_h1 );    
+		nLastPreviewH = selection.height;
+	}
+}
+
+$(function SetupCrop() 
+{
+    $('#crop_box').imgAreaSelect({ handles: true, fadeSpeed: 200, onSelectChange: preview });
+});
+
+var fOldMouseDown = document.onmousedown;
+document.onmousedown = On_Mouse_Down;
+
+function On_Mouse_Down(e)
+{
+	// IE is retarded and doesn't pass the event object
+    if (e == null) 
+        e = window.event; 
+    
+    // IE uses srcElement, others use target
+    var target = e.target != null ? e.target : e.srcElement;
+    
+	// for IE, left click == 1
+    // for Firefox, left click == 0
+    if (  ( e.button == 1 && window.event != null || e.button == 0) )
+	{  
+		var strClass = target.className;
+		var strID = target.id;
+		var nDeselect = 0;
+		if ( strClass.indexOf( "button" ) == -1  && strClass.indexOf( "radio_label" ) == -1 && strClass.indexOf( "radiobtn" ) == -1 && strClass.indexOf( "coord" ) == -1 && strClass.indexOf( "empty_class" ) == -1 )
+		{
+         	nDeselect++;
+		}
+		if( strID.indexOf( "slider" ) == -1  && strID.indexOf( "base" ) == -1 )
+		{
+			nDeselect++;
+		}
+		if( nDeselect == 2 )
+			Deselect();
+    }
+    
+    return fOldMouseDown;
+}
+
+function OnBGColor( nFillType )
+{
+	nFillColorType = nFillType;
+	
+	if( nFillColorType != 5 )
+		$get("pick_color_div").style.visibility = 'hidden';
+	else
+	{
+		$get("pick_color_div").style.visibility = 'visible';
+		$get("pick_color_div").click();
+	}
+}
+
+function componentToHex(c)
+{
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b)
+{
+    return  componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+function OnSelReplace( nRepType )
+{
+	nRepcolorType = nRepType;
+	if( nRepcolorType != 3 )
+	{
+		$get( "R" ).disabled = true;
+		$get( "G" ).disabled = true;
+		$get( "B" ).disabled = true;
+	}
+	else
+	{
+		$get( "R" ).disabled = false;
+		$get( "G" ).disabled = false;
+		$get( "B" ).disabled = false;
+	}	
+	
+	if( nRepcolorType != 4 )
+	{
+		$get( "HEX" ).disabled = true;
+	}
+	else
+	{
+		$get( "HEX" ).disabled = false;
+	}
+	
+	if( nRepcolorType == 1 )
+		$get( "fuzz" ).disabled = true;
+	else
+		$get( "fuzz" ).disabled = false;
+}
+
+function InitBtns()
+{
+	$get( "Text2Resize" ).style.textIndent = "0px";
+							
+	var strOut   =  '';
+	
+	strOut +=  '<div class="button download" id="ProxyBtn1" onclick="newwin(\'http://compressimage.toolur.com\');">	Compress Image</div>';
+	strOut +=  '<div class="button download" id="ProxyBtn2" onclick="newwin(\'http://pdftojpg.me\');">	PDF to JPG</div>';
+	strOut +=  '<div class="button download" id="ProxyBtn3" onclick="newwin(\'http://gifcreator.me\');">	GIF Maker</div>';
+	strOut +=  '<div class="button download" id="ProxyBtn4" onclick="newwin(\'https://proxy.toolur.com\');">	Free Proxy</div>';
+	strOut +=  '<div class="button download" id="ProxyBtn5" onclick="newwin(\'http://mp3cutter.toolur.com\');">	MP3 Cutter</div>'
+
+	$get( "Text2Resize" ).innerHTML = strOut;
+	
+	strTransDivContent = '';
+	
+	strTransDivContent += '<div class="LineH40PX" id="div_idx1">';
+	strTransDivContent += '			 Remove background from your image to make it has a transparent background. ';	
+	strTransDivContent += '		</div>';	
+			
+	strTransDivContent += '		<div class="LineH40PX" id="div_idx2">';	
+	strTransDivContent += '			You\'ll need to save your image as PNG or GIF format to keep the transparency. Replace pixels in the following color:';	
+	strTransDivContent += '		</div>';	
+			
+	strTransDivContent += '		<div class="LineH40PX" id="div_idx3">';	
+	strTransDivContent += '			<div class="LabelsRadio2">';	
+	strTransDivContent += '				<label class="radio_label" id="label_no_replace"><INPUT TYPE="radio" class="radiobtn" name="replace_radio" id="no_replace" checked=true onclick="OnSelReplace(1);">No Replacement</label>';	
+	strTransDivContent += '				<label class="radio_label" id="label_replace_white"><INPUT TYPE="radio" class="radiobtn" name="replace_radio" id="replace_white" onclick="OnSelReplace(2);">White</label>';	
+	strTransDivContent += '				<label class="radio_label" id="label_replace_rgb"><INPUT TYPE="radio" class="radiobtn" name="replace_radio" id="replace_rgb" onclick="OnSelReplace(3);">RGB Color</label>';	
+					
+	strTransDivContent += '				<label>R: <input type="text" class="rgb" size="4" id="R" name="R" value="255" disabled="disabled"></label>';	
+	strTransDivContent += '				<label>G: <input type="text" class="rgb" size="4" id="G" name="G" value="255" disabled="disabled"></label>';	
+	strTransDivContent += '				<label>B: <input type="text" class="rgb" size="4" id="B" name="B" value="255" disabled="disabled"></label>';	
+					
+	strTransDivContent += '				<label class="radio_label" id="label_replace_hex"><INPUT TYPE="radio" class="radiobtn" name="replace_radio" id="replace_hex" onclick="OnSelReplace(4);">HEX Color</label>';	
+	strTransDivContent += '				<label><input type="text" class="hex" size="4" id="HEX" name="HEX" value="FFFFFF" disabled="disabled"></label>';	
+	strTransDivContent += '			</div>		';							
+	strTransDivContent += '		</div>		';		
+			
+	strTransDivContent += '		<div class="LineH40PX" id="div_idx4">';	
+	strTransDivContent += '			 <label>Fuzz: <input type="text" class="coord" size="4" id="fuzz" name="fuzz" value="0" disabled="disabled"> %( Please increase this value to replace more similar colors to full-transparency, e.g. 5%, 15% ).</label>';	
+	strTransDivContent += '		</div>		';	
+			
+	strTransDivContent += '		<div class="LineH40PX" id="div_idx5">';	
+	strTransDivContent += '			 Some colors look like they are pure white, but they are NOT, in this case you should specify a FUZZ value larger than 0%. ';	
+	strTransDivContent += '		</div>		';	
+	
+}	
+
+function toggle_transparent( lnk_obj )
+{
+	bShowTransDiv = !bShowTransDiv;
+	if( bShowTransDiv )
+	{		
+		lnk_obj.style.visibility = 'hidden'; 
+		$get( "div_transparent_parent" ).innerHTML = strTransDivContent;
+	}		
+}
