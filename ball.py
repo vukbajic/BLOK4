@@ -9,3 +9,4 @@ class Ball:
         self.change_y = 0
         self.num = number
         self.new = True
+        self.index = BALL_INDEX

@@ -1,21 +1,23 @@
 from player import *
 from ball import *
 import random
-import time
 
 
 # napravimo novog igraca
 player = Player()
 check = False
-
-
 def moving(checkL, checkD):
 
-    if checkL is True:
-        player.rect = player.rect.move(-PLAYER_SPEED, 0)
+    (x,y,z,g) = player.weapon.rect
 
-    if checkD is True:
-        player.rect = player.rect.move(PLAYER_SPEED,0)
+    #print(x,y,z,g)
+    if checkL is True and x >= 0:
+        player.rect = player.rect.move(-PLAYER_SPEED, 0)
+        player.weapon.rect = player.weapon.rect.move(-PLAYER_SPEED, 0)
+
+    if checkD is True and x <= DISPLAY_WIDTH - z:
+        player.rect = player.rect.move(PLAYER_SPEED, 0)
+        player.weapon.rect = player.weapon.rect.move(PLAYER_SPEED, 0)
 
 
 #funkcija koja ga pokrece
@@ -32,16 +34,14 @@ def movePlayer():
             elif event.key == pygame.K_RIGHT or event.key == ord('d'):
                 checkD = True
 
-            elif event.key == pygame.K_ESCAPE:
-                pygame.quit()
+
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == ord('a'):
                 checkL = False
             if event.key == pygame.K_RIGHT or event.key == ord('d'):
                 checkD = False
-        if event.type == pygame.QUIT:
-            pygame.quit()
+
 
     keys = pygame.key.get_pressed()
     # moves hero with key presses
@@ -49,21 +49,27 @@ def movePlayer():
         checkL = True
     elif keys[pygame.K_RIGHT]:
         checkD = True
+    elif keys[pygame.K_SPACE]:
+        player.weapon.isActive = False
+    elif keys[pygame.K_ESCAPE]:
+        pygame.quit()
 
 
-    print(checkD,checkL)
     return (checkL, checkD)
 
 
 
 def draw_player(player):
+    gameDisplay.blit(player.weapon.image, player.weapon.rect)
     gameDisplay.blit(player.image, player.rect) #ovo je da nacrtamo lika
+
 
 def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam podelio na tri funkcije
     """                                         #ovo je funkcija koja pravi lopte
     Function to make a new, random ball.
     """
     ball = Ball(num)
+    ball.index += 1
     # Starting position of the ball.
     # Take into account the ball size so we don't spawn on the edge.
     ball.x = corx
@@ -81,6 +87,7 @@ def ballToList():                               #tu lopte kreiramo i ubacujemo u
 
     ball = make_ball(0, random.randrange(BALL_SIZE[0], DISPLAY_WIDTH - BALL_SIZE[0]),
                      random.randrange(100, DISPLAY_HEIGHT - BALL_SIZE[0]), 1)
+    ball.new = False
     ball_list.append(ball)
     return ball_list
 
@@ -92,12 +99,15 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
         ball.y += ball.change_y
 
 
+        if ball.new is not True and ball.num <= 3:
         # Bounce the ball if needed
-        if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 75 * (ball.num + 1):
-            ball.change_y *= -1
-        if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
-            ball.change_x *= -1
+            if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 75 * (ball.num + 1):
+                ball.change_y *= -1
+            if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                ball.change_x *= -1
 
+        if ball.y > 75 * ball.num + 1:
+            ball.new = False
 
     # Draw the balls
     for ball in ball_list:
@@ -132,6 +142,58 @@ def crash(xP, yP, xB, yB):                      #funkcija proverava da li je dos
     return True                                 #ako se ne ukrstaju onda True
 
 
+def shot(player):
+    (x, y, z, g) = player.weapon.rect
+    if player.weapon.isActive == False:
+        if y >= 40:
+            player.weapon.rect = player.weapon.rect.move(0, -WEAPON_SPEED)
+        else:
+            player.weapon.isActive = True
+            player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
+
+    (x, y, z, g) = player.weapon.rect
+    return (x, y)
+
+
+def hit(xW, yW, ball_list,playes):
+    xW1 = xW
+    yW1 = yW
+    xW2 = xW + WEAPON_WIDTH
+
+    for p in ball_list:
+        print(p)
+
+    for ball in ball_list:
+        xB1 = ball.x
+        yB1 = ball.y + BALL_SIZE[ball.num]
+        xB2 = ball.x + BALL_SIZE[ball.num]
+
+        if yW1 <= yB1 and xW2 >= xB1:  # tu proveravam da li se ukrstaju koordinate lika i lopte
+            if xW1 <= xB2:
+                ballSplit(ball, ball_list)
+
+                # ako se ukrstaju onda vraca false
+        elif yW1 <= yB1 and xW1 <= xB2:
+            if xW2 >= xB1:
+                ballSplit(ball, ball_list)
+
+
+def ballSplit(ball, ball_list):
+    player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
+    player.weapon.isActive = True
+    ball_list.remove(ball_list[ball.index])
+
+    print('broj je',ball.num,'a index',ball.index)
+
+    if ball.num < 3:
+        ball1 = make_ball(ball.num + 1, ball.x, ball.y, 1)
+        ball_list.append(ball1)
+        ball2 = make_ball(ball.num + 1, ball.x, ball.y, -1)
+        ball_list.append(ball2)
+
+   # else:
+        #pygame.quit()
+
 def massage_to_screen(msg,color):
     font = pygame.font.SysFont(None, FONT_SIZE)
     screen_text = font.render(msg, True, color)
@@ -154,11 +216,11 @@ def gameLoop(ball_List, NoCrash, gameOver):
         (x, y, c, d) = player.rect
         (check1, check2) = movePlayer()
         moving(check1, check2)
+        (xW, yW) = shot(player)
         (x1, y1) = moveBall(ball_List)
-
+        hit(xW, yW, ball_List, player)
 
         NoCrash = crash(x, y, x1, y1)
-
         if not NoCrash and player.life >1:
             pygame.time.delay(1000)
             print(player.life)
@@ -178,6 +240,9 @@ def gameLoop(ball_List, NoCrash, gameOver):
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        NoCrash = False
+                        gameOver = False
+                    if event.key == pygame.QUIT:
                         NoCrash = False
                         gameOver = False
                     if event.key == pygame.K_c:
