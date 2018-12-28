@@ -1,25 +1,13 @@
 from globalFunc import *
+import time
+from multiprocessing import  Process
 
 #pocetak programa
 pygame.init()
-
 ball_List = ballToList()
-
 NoCrash = True
-while NoCrash:
-    gameDisplay.fill(WHITE)
-    #printovi su samo zbog lakseg dibaga
-    draw_player(player)
-    print(player.rect)
-    (x,y,c,d) = player.rect
-    movePlayer()
-    (x1,y1) = moveBall(ball_List)
-    print(x,y,x1,y1)
-    print(NoCrash)
-    NoCrash = crash(x,y,x1,y1)
-    print(NoCrash)
-    pygame.display.update()
-    clock.tick(100)
+gameOver = False
+gameLoop(ball_List, NoCrash, gameOver)
 
-pygame.quit()
-quit()
+
+

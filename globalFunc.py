@@ -1,31 +1,58 @@
 from player import *
 from ball import *
 import random
+import time
 
 
 # napravimo novog igraca
 player = Player()
+check = False
+
+
+def moving(checkL, checkD):
+
+    if checkL is True:
+        player.rect = player.rect.move(-PLAYER_SPEED, 0)
+
+    if checkD is True:
+        player.rect = player.rect.move(PLAYER_SPEED,0)
+
 
 #funkcija koja ga pokrece
 def movePlayer():
-
+    checkD = False
+    checkL = False
     for event in pygame.event.get():
-        print(event)
+
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                player.rect = player.rect.move(-PLAYER_SPEED, 0)
+            if event.key == pygame.K_LEFT or event.key == ord('a'):
+                checkL = True
                 #rect su koordinate slike. sastoji se od (x,y,visine,sirine)
                 #move je ugradjena funkcija po kojoj se kreces po x i y osi
-            elif event.key == pygame.K_RIGHT:
-                player.rect = player.rect.move(PLAYER_SPEED, 0)
+            elif event.key == pygame.K_RIGHT or event.key == ord('d'):
+                checkD = True
 
             elif event.key == pygame.K_ESCAPE:
                 pygame.quit()
 
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT or event.key == ord('a'):
+                checkL = False
+            if event.key == pygame.K_RIGHT or event.key == ord('d'):
+                checkD = False
         if event.type == pygame.QUIT:
             pygame.quit()
 
+    keys = pygame.key.get_pressed()
+    # moves hero with key presses
+    if keys[pygame.K_LEFT]:
+        checkL = True
+    elif keys[pygame.K_RIGHT]:
+        checkD = True
 
+
+    print(checkD,checkL)
+    return (checkL, checkD)
 
 
 
@@ -64,8 +91,7 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
         ball.x += ball.change_x
         ball.y += ball.change_y
 
-        print(ball.x)
-        print(ball.y)
+
         # Bounce the ball if needed
         if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 75 * (ball.num + 1):
             ball.change_y *= -1
@@ -94,7 +120,7 @@ def crash(xP, yP, xB, yB):                      #funkcija proverava da li je dos
     yB1 = yB + BALL_SIZE[0]                     #y koordinata + velicina lopte (donja strana lopte)
     xB2 = xB + BALL_SIZE[0]                     #x1 koordinata, desna strana lopte
                                                 #tu cemo morati jos da nadogradimo da radi i za manje lopte
-    print(xP1, yP1, xP2, xB1, yB1, xB2 )
+
 
     if yP1 <= yB1 and xP2 >= xB1:               #tu proveravam da li se ukrstaju koordinate lika i lopte
         if xP1 <= xB2:
@@ -106,3 +132,65 @@ def crash(xP, yP, xB, yB):                      #funkcija proverava da li je dos
     return True                                 #ako se ne ukrstaju onda True
 
 
+def massage_to_screen(msg,color):
+    font = pygame.font.SysFont(None, FONT_SIZE)
+    screen_text = font.render(msg, True, color)
+    gameDisplay.blit(screen_text, [DISPLAY_WIDTH/4, DISPLAY_HEIGHT/4])
+
+def lifeNumber(life):
+    font = pygame.font.SysFont(None,NUMBERLIFES_FONT_SIZE)
+    screen_text = font.render(life,True,BLACK)
+    gameDisplay.blit(screen_text, [50,50])
+
+def gameLoop(ball_List, NoCrash, gameOver):
+
+    while NoCrash:
+
+        gameDisplay.fill(WHITE)
+        lifeNumber(player.life.__str__())
+        # printovi su samo zbog lakseg dibaga
+        draw_player(player)
+
+        (x, y, c, d) = player.rect
+        (check1, check2) = movePlayer()
+        moving(check1, check2)
+        (x1, y1) = moveBall(ball_List)
+
+
+        NoCrash = crash(x, y, x1, y1)
+
+        if not NoCrash and player.life >1:
+            pygame.time.delay(1000)
+            print(player.life)
+            player.life -=1
+            NoCrash = True
+            ball_List = ballToList()
+
+
+
+        gameOver = not NoCrash
+        while gameOver == True:
+
+            gameDisplay.fill(WHITE)
+            massage_to_screen("Game over, press C to play again or ESC to quit", RED)
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        NoCrash = False
+                        gameOver = False
+                    if event.key == pygame.K_c:
+                        print('C')
+                        NoCrash = True
+                        gameOver = False
+                        player.life = LIFE
+                        ball_List = ballToList()
+
+
+
+        pygame.display.update()
+        clock.tick(30)
+
+    pygame.quit()
+    quit()
