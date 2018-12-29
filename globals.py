@@ -23,6 +23,9 @@ FONT_SIZE = 30
 gameDisplay = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption('Bubble trouble')
 gameDisplay.fill(WHITE)
+a = pygame.image.load('icon.jpg')
+pygame.display.set_icon(a)
+
 
 clock = pygame.time.Clock()
 screen_check = True

@@ -263,7 +263,7 @@ def gameLoop(ball_List, NoCrash, gameOver):
 
 def start_screen():
 
-    bg = pygame.image.load("1_bubble_trouble.jpg")
+    bg = pygame.image.load("start_screen_background.jpg")
 
     while screen_check:
         gameDisplay.blit(bg, (0, 0))
@@ -272,9 +272,8 @@ def start_screen():
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
-                if event.key == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+            if event.type == pygame.QUIT:
+                sys.exit(0)
 
 
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
