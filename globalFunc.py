@@ -1,6 +1,11 @@
 from player import *
 from ball import *
 import random
+import sys
+import pygame
+import  time
+from button import *
+
 
 
 # napravimo novog igraca
@@ -11,13 +16,16 @@ def moving(checkL, checkD):
     (x,y,z,g) = player.weapon.rect
 
     #print(x,y,z,g)
-    if checkL is True and x >= 0:
+    if checkL is True and x >= 10:
         player.rect = player.rect.move(-PLAYER_SPEED, 0)
-        player.weapon.rect = player.weapon.rect.move(-PLAYER_SPEED, 0)
+        if player.weapon.isActive == True:
+             player.weapon.rect = player.weapon.rect.move(-PLAYER_SPEED, 0)
 
-    if checkD is True and x <= DISPLAY_WIDTH - z:
+    if checkD is True and x <= DISPLAY_WIDTH - 20:
         player.rect = player.rect.move(PLAYER_SPEED, 0)
-        player.weapon.rect = player.weapon.rect.move(PLAYER_SPEED, 0)
+        if player.weapon.isActive == True:
+            player.weapon.rect = player.weapon.rect.move(PLAYER_SPEED, 0)
+
 
 
 #funkcija koja ga pokrece
@@ -25,26 +33,12 @@ def movePlayer():
     checkD = False
     checkL = False
     for event in pygame.event.get():
-
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT or event.key == ord('a'):
-                checkL = True
-                #rect su koordinate slike. sastoji se od (x,y,visine,sirine)
-                #move je ugradjena funkcija po kojoj se kreces po x i y osi
-            elif event.key == pygame.K_RIGHT or event.key == ord('d'):
-                checkD = True
-
-
-
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == ord('a'):
-                checkL = False
-            if event.key == pygame.K_RIGHT or event.key == ord('d'):
-                checkD = False
-
+        if event.type == pygame.QUIT:
+            sys.exit(0)
 
     keys = pygame.key.get_pressed()
     # moves hero with key presses
+
     if keys[pygame.K_LEFT]:
         checkL = True
     elif keys[pygame.K_RIGHT]:
@@ -54,9 +48,7 @@ def movePlayer():
     elif keys[pygame.K_ESCAPE]:
         pygame.quit()
 
-
     return (checkL, checkD)
-
 
 
 def draw_player(player):
@@ -82,6 +74,7 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
 
     return ball
 
+
 def ballToList():                               #tu lopte kreiramo i ubacujemo u listu koju prosledjujemo funkciji
     ball_list = []                              #u kojoj se krecu
 
@@ -91,12 +84,13 @@ def ballToList():                               #tu lopte kreiramo i ubacujemo u
     ball_list.append(ball)
     return ball_list
 
+
 def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
     for ball in ball_list:
         # Move the ball's center
-        ball.x += ball.change_x
-        ball.y += ball.change_y
+        ball.x += ball.change_x*2
+        ball.y += ball.change_y*2   #promena brzine???
 
 
         if ball.new is not True and ball.num <= 3:
@@ -120,17 +114,16 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
     # Go ahead and update the screen with what we've drawn.
     #pygame.display.flip()
 
+
 def crash(xP, yP, xB, yB):                      #funkcija proverava da li je doslo do sudara izmedju lopte i lika
     xP1 = xP                                    #x koordinata lika
     yP1 = yP                                    #y koordinata lika
     xP2 = xP + PLAYER_WIDTH                     #x1 koordinata, do je njegova "desna" strana
 
-
     xB1 = xB                                    #x koordinata lopte
     yB1 = yB + BALL_SIZE[0]                     #y koordinata + velicina lopte (donja strana lopte)
     xB2 = xB + BALL_SIZE[0]                     #x1 koordinata, desna strana lopte
                                                 #tu cemo morati jos da nadogradimo da radi i za manje lopte
-
 
     if yP1 <= yB1 and xP2 >= xB1:               #tu proveravam da li se ukrstaju koordinate lika i lopte
         if xP1 <= xB2:
@@ -144,18 +137,20 @@ def crash(xP, yP, xB, yB):                      #funkcija proverava da li je dos
 
 def shot(player):
     (x, y, z, g) = player.weapon.rect
+
     if player.weapon.isActive == False:
         if y >= 40:
             player.weapon.rect = player.weapon.rect.move(0, -WEAPON_SPEED)
         else:
             player.weapon.isActive = True
-            player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
+            player.weapon.rect = player.rect
+            player.weapon.rect = player.weapon.rect.move(7, 0)  #7 jer je tako uvek na sredini coveculjka
 
     (x, y, z, g) = player.weapon.rect
     return (x, y)
 
 
-def hit(xW, yW, ball_list,playes):
+def hit(xW, yW, ball_list):
     xW1 = xW
     yW1 = yW
     xW2 = xW + WEAPON_WIDTH
@@ -191,18 +186,18 @@ def ballSplit(ball, ball_list):
         ball2 = make_ball(ball.num + 1, ball.x, ball.y, -1)
         ball_list.append(ball2)
 
-   # else:
-        #pygame.quit()
 
 def massage_to_screen(msg,color):
     font = pygame.font.SysFont(None, FONT_SIZE)
     screen_text = font.render(msg, True, color)
     gameDisplay.blit(screen_text, [DISPLAY_WIDTH/4, DISPLAY_HEIGHT/4])
 
+
 def lifeNumber(life):
     font = pygame.font.SysFont(None,NUMBERLIFES_FONT_SIZE)
     screen_text = font.render(life,True,BLACK)
     gameDisplay.blit(screen_text, [50,50])
+
 
 def gameLoop(ball_List, NoCrash, gameOver):
 
@@ -218,10 +213,15 @@ def gameLoop(ball_List, NoCrash, gameOver):
         moving(check1, check2)
         (xW, yW) = shot(player)
         (x1, y1) = moveBall(ball_List)
-        hit(xW, yW, ball_List, player)
+        hit(xW, yW, ball_List)
 
         NoCrash = crash(x, y, x1, y1)
         if not NoCrash and player.life >1:
+            if player.life == 3:
+                massage_to_screen("Oooops, be ceraful, two lifes remaining", RED)
+            else:
+                massage_to_screen("Oooops, be ceraful, one life remaining", RED)
+            pygame.display.update()
             pygame.time.delay(1000)
             print(player.life)
             player.life -=1
@@ -259,3 +259,36 @@ def gameLoop(ball_List, NoCrash, gameOver):
 
     pygame.quit()
     quit()
+
+
+def start_screen():
+
+    bg = pygame.image.load("start_screen_background.jpg")
+
+    while screen_check:
+        gameDisplay.blit(bg, (0, 0))
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
+            if event.type == pygame.QUIT:
+                sys.exit(0)
+
+
+        button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
+        button("2 Players", 630, 85, 140, 50, YELLOW, RED)
+        button("Options", 630, 150, 140, 50, YELLOW, RED)
+
+        pygame.display.update()
+
+def SinglePlayerAction():
+    ball_List = ballToList()
+    NoCrash = True
+    gameOver = False
+    gameLoop(ball_List, NoCrash, gameOver)
+
+
+
+
+
