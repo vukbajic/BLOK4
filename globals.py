@@ -29,3 +29,4 @@ pygame.display.set_icon(a)
 
 clock = pygame.time.Clock()
 screen_check = True
+

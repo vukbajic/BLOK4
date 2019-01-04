@@ -36,6 +36,7 @@ def movePlayer():
         if event.type == pygame.QUIT:
             sys.exit(0)
 
+
     keys = pygame.key.get_pressed()
     # moves hero with key presses
 
@@ -47,6 +48,9 @@ def movePlayer():
         player.weapon.isActive = False
     elif keys[pygame.K_ESCAPE]:
         pygame.quit()
+    elif keys[pygame.K_p]:
+        pause()
+
 
     return (checkL, checkD)
 
@@ -237,6 +241,7 @@ def gameLoop(ball_List, NoCrash, gameOver):
             massage_to_screen("Game over, press C to play again or ESC to quit", RED)
             pygame.display.update()
 
+
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -254,12 +259,29 @@ def gameLoop(ball_List, NoCrash, gameOver):
 
 
 
+
         pygame.display.update()
         clock.tick(30)
 
     pygame.quit()
     quit()
 
+
+def pause():
+    checkPause = False
+    while(checkPause is not True):
+        gameDisplay.fill(WHITE)
+        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE", RED)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
+                if event.key == pygame.K_o:
+                   checkPause = True
+            if event.type == pygame.QUIT:
+                sys.exit(0)
 
 def start_screen():
 
@@ -278,7 +300,9 @@ def start_screen():
 
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
         button("2 Players", 630, 85, 140, 50, YELLOW, RED)
-        button("Options", 630, 150, 140, 50, YELLOW, RED)
+        button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
+        button("Options", 630, 215, 140, 50, YELLOW, RED)
+
 
         pygame.display.update()
 
