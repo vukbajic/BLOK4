@@ -242,7 +242,7 @@ def ballSplit(ball, ball_list, player):
 def massage_to_screen(msg,color):
     font = pygame.font.SysFont(None, FONT_SIZE)
     screen_text = font.render(msg, True, color)
-    gameDisplay.blit(screen_text, [DISPLAY_WIDTH/4, DISPLAY_HEIGHT/4])
+    gameDisplay.blit(screen_text, [DISPLAY_WIDTH/8, DISPLAY_HEIGHT/4])
 
 
 def lifeNumber(players, multiplay):
@@ -352,7 +352,7 @@ def pause():
     checkPause = False
     while(checkPause is not True):
         gameDisplay.fill(WHITE)
-        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE", RED)
+        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE OR 'H' TO GO ON HOME SCREEN", RED)
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
@@ -361,6 +361,10 @@ def pause():
                     quit()
                 if event.key == pygame.K_o:
                    checkPause = True
+                if event.key == pygame.K_h:
+                    global index
+                    index = 0
+                    start_screen()
             if event.type == pygame.QUIT:
                 sys.exit(0)
 
