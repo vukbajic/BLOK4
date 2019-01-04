@@ -4,6 +4,7 @@ import random
 import sys
 import pygame
 import  time
+from globals import  *
 from button import *
 
 
@@ -64,8 +65,11 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     """                                         #ovo je funkcija koja pravi lopte
     Function to make a new, random ball.
     """
-    ball = Ball(num)
-    ball.index += 1
+    global index
+    ball = Ball(num,index)
+    index =   index + 1
+
+
     # Starting position of the ball.
     # Take into account the ball size so we don't spawn on the edge.
     ball.x = corx
@@ -74,7 +78,7 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     # Speed and direction of rectangle
 
     ball.change_x = direction
-    ball.change_y = 3
+    ball.change_y = 4
 
     return ball
 
@@ -82,8 +86,7 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
 def ballToList():                               #tu lopte kreiramo i ubacujemo u listu koju prosledjujemo funkciji
     ball_list = []                              #u kojoj se krecu
 
-    ball = make_ball(0, random.randrange(BALL_SIZE[0], DISPLAY_WIDTH - BALL_SIZE[0]),
-                     random.randrange(100, DISPLAY_HEIGHT - BALL_SIZE[0]), 1)
+    ball = make_ball(0,150,250,1)
     ball.new = False
     ball_list.append(ball)
     return ball_list
@@ -93,23 +96,53 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
     for ball in ball_list:
         # Move the ball's center
-        ball.x += ball.change_x*2
-        ball.y += ball.change_y*2   #promena brzine???
-
+        ball.x += ball.change_x * 2
+        ball.y += ball.change_y * 2
 
         if ball.new is not True and ball.num <= 3:
-        # Bounce the ball if needed
-            if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 75 * (ball.num + 1):
-                ball.change_y *= -1
-            if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
-                ball.change_x *= -1
+            if ball.num == 0:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 200:
+                    ball.change_y *= -1
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                    ball.change_x *= -1
 
-        if ball.y > 75 * ball.num + 1:
-            ball.new = False
+
+            elif ball.num == 1:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 250:
+                    ball.change_y *= -1
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                    ball.change_x *= -1
+
+
+            elif ball.num == 2:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 300:
+                    ball.change_y *= -1
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                    ball.change_x *= -1
+
+            elif ball.num == 3:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 350:
+                    ball.change_y *= -1
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                    ball.change_x *= -1
+
+        if ball.num <= 3 and ball.new is True:
+            if ball.num == 0:
+                if ball.y > 200:
+                    ball.new = False
+            elif ball.num == 1:
+                if ball.y > 250:
+                    ball.new = False
+            elif ball.num == 2:
+                if ball.y > 300:
+                    ball.new = False
+            elif ball.num == 3:
+                if ball.y > 350:
+                    ball.new = False
 
     # Draw the balls
     for ball in ball_list:
-        pygame.draw.circle(gameDisplay, BLACK, [ball.x, ball.y], BALL_SIZE[ball.num])
+        pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
 
     # --- Wrap-up
     # Limit to 60 frames per second
@@ -159,8 +192,8 @@ def hit(xW, yW, ball_list):
     yW1 = yW
     xW2 = xW + WEAPON_WIDTH
 
-    for p in ball_list:
-        print(p)
+    for ball in ball_list:
+        print("index: ",ball.index)
 
     for ball in ball_list:
         xB1 = ball.x
@@ -181,8 +214,11 @@ def ballSplit(ball, ball_list):
     player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
     player.weapon.isActive = True
     ball_list.remove(ball_list[ball.index])
-
-    print('broj je',ball.num,'a index',ball.index)
+    for ball_temp in ball_list:
+        if ball_temp.index > ball.index:
+            ball_temp.index -= 1
+    global index
+    index -= 1
 
     if ball.num < 3:
         ball1 = make_ball(ball.num + 1, ball.x, ball.y, 1)
