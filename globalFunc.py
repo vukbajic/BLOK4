@@ -10,9 +10,9 @@ from button import *
 
 
 # napravimo novog igraca
-player = Player()
+
 check = False
-def moving(checkL, checkD):
+def moving(checkL, checkD, player):
 
     (x,y,z,g) = player.weapon.rect
 
@@ -30,9 +30,11 @@ def moving(checkL, checkD):
 
 
 #funkcija koja ga pokrece
-def movePlayer():
+def movePlayer(players, multiplay):
     checkD = False
     checkL = False
+    checkD2 = False
+    checkL2 = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit(0)
@@ -46,14 +48,24 @@ def movePlayer():
     elif keys[pygame.K_RIGHT]:
         checkD = True
     elif keys[pygame.K_SPACE]:
-        player.weapon.isActive = False
+        players[0].weapon.isActive = False
     elif keys[pygame.K_ESCAPE]:
         pygame.quit()
     elif keys[pygame.K_p]:
         pause()
 
+    if keys[pygame.K_a]:
+        checkL2 = True
+    elif keys[pygame.K_d]:
+        checkD2 = True
+    elif keys[pygame.K_w]:
+        if multiplay:
+            players[1].weapon.isActive = False
 
-    return (checkL, checkD)
+    moving(checkL, checkD, players[0])
+    if multiplay:
+        moving(checkL2, checkD2, players[1])
+  #  return (checkL, checkD)
 
 
 def draw_player(player):
@@ -187,7 +199,7 @@ def shot(player):
     return (x, y)
 
 
-def hit(xW, yW, ball_list):
+def hit(xW, yW, ball_list, player):
     xW1 = xW
     yW1 = yW
     xW2 = xW + WEAPON_WIDTH
@@ -202,15 +214,15 @@ def hit(xW, yW, ball_list):
 
         if yW1 <= yB1 and xW2 >= xB1:  # tu proveravam da li se ukrstaju koordinate lika i lopte
             if xW1 <= xB2:
-                ballSplit(ball, ball_list)
+                ballSplit(ball, ball_list, player)
 
                 # ako se ukrstaju onda vraca false
         elif yW1 <= yB1 and xW1 <= xB2:
             if xW2 >= xB1:
-                ballSplit(ball, ball_list)
+                ballSplit(ball, ball_list, player)
 
 
-def ballSplit(ball, ball_list):
+def ballSplit(ball, ball_list, player):
     player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
     player.weapon.isActive = True
     ball_list.remove(ball_list[ball.index])
@@ -233,40 +245,71 @@ def massage_to_screen(msg,color):
     gameDisplay.blit(screen_text, [DISPLAY_WIDTH/4, DISPLAY_HEIGHT/4])
 
 
-def lifeNumber(life):
+def lifeNumber(players, multiplay):
+    life = players[0].life.__str__()
     font = pygame.font.SysFont(None,NUMBERLIFES_FONT_SIZE)
     screen_text = font.render(life,True,BLACK)
     gameDisplay.blit(screen_text, [50,50])
+    if multiplay:
+        life1 = players[1].life.__str__()
+        screen_text1 = font.render(life1, True, BLACK)
+        gameDisplay.blit(screen_text1, [DISPLAY_WIDTH-50, 50])
 
 
-def gameLoop(ball_List, NoCrash, gameOver):
+
+def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
     while NoCrash:
 
         gameDisplay.fill(WHITE)
-        lifeNumber(player.life.__str__())
+        lifeNumber(players, multiplay)
         # printovi su samo zbog lakseg dibaga
-        draw_player(player)
+        draw_player(players[0])
+        if multiplay:
+            draw_player(players[1])
 
-        (x, y, c, d) = player.rect
-        (check1, check2) = movePlayer()
-        moving(check1, check2)
-        (xW, yW) = shot(player)
+        (x, y, c, d) = players[0].rect
+        movePlayer(players, multiplay)
+       # moving(check1, check2, players[0])
+        (xW, yW) = shot(players[0])
         (x1, y1) = moveBall(ball_List)
-        hit(xW, yW, ball_List)
+        hit(xW, yW, ball_List, players[0])
+
+        if multiplay:
+            (x2, y2, c2, d2) = players[1].rect
+            movePlayer(players, multiplay)
+           # moving(check1, check2, players[1])
+            (xW2, yW2) = shot(players[1])
+            #(x21, y21) = moveBall(ball_List)
+            hit(xW2, yW2, ball_List, players[1])
+
 
         NoCrash = crash(x, y, x1, y1)
-        if not NoCrash and player.life >1:
-            if player.life == 3:
+        if not NoCrash and players[0].life >1:
+            if players[0].life == 3:
                 massage_to_screen("Oooops, be ceraful, two lifes remaining", RED)
             else:
                 massage_to_screen("Oooops, be ceraful, one life remaining", RED)
             pygame.display.update()
             pygame.time.delay(1000)
-            print(player.life)
-            player.life -=1
+            print(players[0].life)
+            players[0].life -=1
             NoCrash = True
             ball_List = ballToList()
+
+        if multiplay:
+            NoCrash = crash(x2, y2, x1, y1)
+            if not NoCrash and players[0].life > 1:
+                if players[1].life == 3:
+                    massage_to_screen("Oooops, be ceraful, two lifes remaining", RED)
+                else:
+                    massage_to_screen("Oooops, be ceraful, one life remaining", RED)
+                pygame.display.update()
+                pygame.time.delay(1000)
+                print(players[1].life)
+                players[1].life -= 1
+                NoCrash = True
+                ball_List = ballToList()
 
 
 
@@ -290,7 +333,9 @@ def gameLoop(ball_List, NoCrash, gameOver):
                         print('C')
                         NoCrash = True
                         gameOver = False
-                        player.life = LIFE
+                        players[0].life = LIFE
+                        if multiplay:
+                            players[1].life = LIFE
                         ball_List = ballToList()
 
 
@@ -335,7 +380,7 @@ def start_screen():
 
 
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
-        button("2 Players", 630, 85, 140, 50, YELLOW, RED)
+        button("2 Players", 630, 85, 140, 50, YELLOW, RED,MultiPlayerAction)
         button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
         button("Options", 630, 215, 140, 50, YELLOW, RED)
 
@@ -343,10 +388,30 @@ def start_screen():
         pygame.display.update()
 
 def SinglePlayerAction():
+    player = Player()
+    players = [Player()]
+    players.append(player)
     ball_List = ballToList()
     NoCrash = True
     gameOver = False
-    gameLoop(ball_List, NoCrash, gameOver)
+    multiPlay = False
+    gameLoop(ball_List, NoCrash, gameOver, players, multiPlay)
+
+def MultiPlayerAction():
+    player1 = Player()
+    player2 = Player()
+    players = [Player()]
+
+    player1.set_position((DISPLAY_WIDTH/3), DISPLAY_HEIGHT)
+    player2.set_position((DISPLAY_WIDTH/3) * 2, DISPLAY_HEIGHT)
+
+    players.append(player1)
+    players.append(player2)
+    ball_List = ballToList()
+    NoCrash = True
+    gameOver = False
+    multiPlay = True
+    gameLoop(ball_List, NoCrash, gameOver, players, multiPlay)
 
 
 
