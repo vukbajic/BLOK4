@@ -9,14 +9,12 @@ from button import *
 
 
 
-# napravimo novog igraca
 
 check = False
 def moving(checkL, checkD, player):
 
-    (x,y,z,g) = player.weapon.rect
+    (x,y,z,g) = player.rect
 
-    #print(x,y,z,g)
     if checkL is True and x >= 10:
         player.rect = player.rect.move(-PLAYER_SPEED, 0)
         if player.weapon.isActive == True:
@@ -27,6 +25,16 @@ def moving(checkL, checkD, player):
         if player.weapon.isActive == True:
             player.weapon.rect = player.weapon.rect.move(PLAYER_SPEED, 0)
 
+    #proveravam okvire lika
+    #########################################################################
+    life = '.'
+    font = pygame.font.SysFont(None, 50)
+    screen_text = font.render(life, True, BLACK)
+    gameDisplay.blit(screen_text, [x, y-20])
+    gameDisplay.blit(screen_text, [x + PLAYER_WIDTH, y + PLAYER_HIGHT-20])
+    gameDisplay.blit(screen_text, [x + PLAYER_WIDTH, y-20])
+    gameDisplay.blit(screen_text, [x, y + PLAYER_HIGHT-20])
+    #########################################################################
 
 
 #funkcija koja ga pokrece
@@ -65,7 +73,6 @@ def movePlayer(players, multiplay):
     moving(checkL, checkD, players[0])
     if multiplay:
         moving(checkL2, checkD2, players[1])
-  #  return (checkL, checkD)
 
 
 def draw_player(player):
@@ -78,8 +85,8 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     Function to make a new, random ball.
     """
     global index
-    ball = Ball(num,index)
-    index =   index + 1
+    ball = Ball(num, index)
+    index+=1
 
 
     # Starting position of the ball.
@@ -97,7 +104,8 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
 
 def ballToList():                               #tu lopte kreiramo i ubacujemo u listu koju prosledjujemo funkciji
     ball_list = []                              #u kojoj se krecu
-
+    global index
+    index = 0
     ball = make_ball(0,150,250,1)
     ball.new = False
     ball_list.append(ball)
@@ -156,32 +164,41 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
     for ball in ball_list:
         pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
 
-    # --- Wrap-up
-    # Limit to 60 frames per second
+        #proveravam okvire lopte. ovako sam uspeo da nastimam okvir samo prve, velike lopte..
+        #mislim da bi bilo bolje da umesto sto crtamo loptu da ubacimo sliku njenu, tu se lakse prate okviri
+        ###############################################################################################################
+        life = '.'
+        font = pygame.font.SysFont(None, 50)
+        screen_text = font.render(life, True, BLACK)
+        gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
+        gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y]) #desno dole
+        gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y -BALL_SIZE[ball.num]*1.5]) #desno gore
+        gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y]) #LEVO DOLE
+
+        ###############################################################################################################
+
+    # Limit to 20 frames per second
     pygame.time.delay(20)
-    return (ball.x, ball.y)
-    # Go ahead and update the screen with what we've drawn.
-    #pygame.display.flip()
 
 
-def crash(xP, yP, xB, yB):                      #funkcija proverava da li je doslo do sudara izmedju lopte i lika
-    xP1 = xP                                    #x koordinata lika
-    yP1 = yP                                    #y koordinata lika
-    xP2 = xP + PLAYER_WIDTH                     #x1 koordinata, do je njegova "desna" strana
+def crash(xP, yP, ball_List):                           #funkcija proverava da li je doslo do sudara izmedju lopte i lika
+    for ball in ball_List:
+        xP1 = xP                                        #x koordinata lika
+        yP1 = yP -20                                    #y koordinata lika
+        xP2 = xP + PLAYER_WIDTH                         #x1 koordinata, do je njegova "desna" strana
 
-    xB1 = xB                                    #x koordinata lopte
-    yB1 = yB + BALL_SIZE[0]                     #y koordinata + velicina lopte (donja strana lopte)
-    xB2 = xB + BALL_SIZE[0]                     #x1 koordinata, desna strana lopte
-                                                #tu cemo morati jos da nadogradimo da radi i za manje lopte
+        xB1 = ball.x - BALL_SIZE[ball.num]              #x koordinata lopte
+        yB1 = ball.y                                    #y koordinata
+        xB2 = ball.x + BALL_SIZE[ball.num] / 2          #x1 koordinata, desna strana lopte
 
-    if yP1 <= yB1 and xP2 >= xB1:               #tu proveravam da li se ukrstaju koordinate lika i lopte
-        if xP1 <= xB2:
-            return False                        #ako se ukrstaju onda vraca false
-    if yP1 <= yB1 and xP1 <= xB2:
-        if xP2 >= xB1:
-            return False
+        if yP1 <= yB1 and xP2 >= xB1:                   #tu proveravam da li se ukrstaju koordinate lika i lopte
+            if xP1 <= xB2:
+                return False                            #ako se ukrstaju onda vraca false
+        if yP1 <= yB1 and xP1 <= xB2:
+            if xP2 >= xB1:
+                return False
 
-    return True                                 #ako se ne ukrstaju onda True
+    return True                                         #ako se ne ukrstaju onda True
 
 
 def shot(player):
@@ -205,27 +222,38 @@ def hit(xW, yW, ball_list, player):
     xW2 = xW + WEAPON_WIDTH
 
     for ball in ball_list:
-        print("index: ",ball.index)
+        xB1 = ball.x - BALL_SIZE[ball.num]              # x koordinata lopte
+        yB1 = ball.y                                    # y koordinata
+        xB2 = ball.x + BALL_SIZE[ball.num] / 2
 
-    for ball in ball_list:
-        xB1 = ball.x
-        yB1 = ball.y + BALL_SIZE[ball.num]
-        xB2 = ball.x + BALL_SIZE[ball.num]
+        global checkSplit
+        checkSplit = False
 
         if yW1 <= yB1 and xW2 >= xB1:  # tu proveravam da li se ukrstaju koordinate lika i lopte
             if xW1 <= xB2:
-                ballSplit(ball, ball_list, player)
-
-                # ako se ukrstaju onda vraca false
+                weaponBack(player)
+                if(checkSplit):
+                    print(xW, yW, ball.x, ball.y)
+                    ballSplit(ball, ball_list, player)
         elif yW1 <= yB1 and xW1 <= xB2:
             if xW2 >= xB1:
-                ballSplit(ball, ball_list, player)
+                weaponBack(player)
+                if(checkSplit):
+                    print(xW, yW, ball.x, ball.y)
+                    ballSplit(ball, ball_list, player)
+
+def weaponBack(player):
+    player.weapon.rect = player.rect
+    player.weapon.rect = player.weapon.rect.move(7, 0)
+    player.weapon.isActive = True
+    global checkSplit
+    checkSplit = True
 
 
 def ballSplit(ball, ball_list, player):
-    player.weapon.rect = player.weapon.rect.move(0, DISPLAY_HEIGHT)
-    player.weapon.isActive = True
+
     ball_list.remove(ball_list[ball.index])
+
     for ball_temp in ball_list:
         if ball_temp.index > ball.index:
             ball_temp.index -= 1
@@ -270,21 +298,18 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
-       # moving(check1, check2, players[0])
         (xW, yW) = shot(players[0])
-        (x1, y1) = moveBall(ball_List)
+        moveBall(ball_List)
         hit(xW, yW, ball_List, players[0])
 
         if multiplay:
             (x2, y2, c2, d2) = players[1].rect
             movePlayer(players, multiplay)
-           # moving(check1, check2, players[1])
             (xW2, yW2) = shot(players[1])
-            #(x21, y21) = moveBall(ball_List)
             hit(xW2, yW2, ball_List, players[1])
 
 
-        NoCrash = crash(x, y, x1, y1)
+        NoCrash = crash(x, y, ball_List)
         if not NoCrash and players[0].life >1:
             if players[0].life == 3:
                 massage_to_screen("Oooops, be ceraful, two lifes remaining", RED)
@@ -298,7 +323,7 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
             ball_List = ballToList()
 
         if multiplay:
-            NoCrash = crash(x2, y2, x1, y1)
+            NoCrash = crash(x2, y2, ball_List)
             if not NoCrash and players[0].life > 1:
                 if players[1].life == 3:
                     massage_to_screen("Oooops, be ceraful, two lifes remaining", RED)
@@ -402,15 +427,14 @@ def SinglePlayerAction():
     gameLoop(ball_List, NoCrash, gameOver, players, multiPlay)
 
 def MultiPlayerAction():
-    player1 = Player()
-    player2 = Player()
     players = [Player()]
-
-    player1.set_position((DISPLAY_WIDTH/3), DISPLAY_HEIGHT)
-    player2.set_position((DISPLAY_WIDTH/3) * 2, DISPLAY_HEIGHT)
-
-    players.append(player1)
+    player2 = Player('player2.png')
     players.append(player2)
+    i = 0
+    for player in players:
+        player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT)
+        i+=1
+
     ball_List = ballToList()
     NoCrash = True
     gameOver = False

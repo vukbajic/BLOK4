@@ -2,8 +2,8 @@ from globals import *
 from weapon import *
 #klasa lika, to sam sa neta uzeo
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
-        self.image = pygame.image.load('player.png')          #dodajemo mu sliku
+    def __init__(self, image_name='player.png'):
+        self.image = pygame.image.load(image_name)          #dodajemo mu sliku
         self.rect = self.image.get_rect()                           #uzimamo koordinate i velicinu slike (x,y,visina,sirina)
         self.set_position()                                         #poziv funkcije koji ka po difoltu stavi na sredinu
         self.weapon = Weapon()
