@@ -6,78 +6,13 @@ import pygame
 import  time
 from globals import  *
 from button import *
+from pause import *
+from message_print import *
 
 
 
 
 check = False
-def moving(checkL, checkD, player):
-
-    (x,y,z,g) = player.rect
-
-    if checkL is True and x >= 10:
-        player.rect = player.rect.move(-PLAYER_SPEED, 0)
-        if player.weapon.isActive == True:
-             player.weapon.rect = player.weapon.rect.move(-PLAYER_SPEED, 0)
-
-    if checkD is True and x <= DISPLAY_WIDTH - 20:
-        player.rect = player.rect.move(PLAYER_SPEED, 0)
-        if player.weapon.isActive == True:
-            player.weapon.rect = player.weapon.rect.move(PLAYER_SPEED, 0)
-
-    #proveravam okvire lika
-    #########################################################################
-    life = '.'
-    font = pygame.font.SysFont(None, 50)
-    screen_text = font.render(life, True, BLACK)
-    gameDisplay.blit(screen_text, [x, y-20])
-    gameDisplay.blit(screen_text, [x + PLAYER_WIDTH, y + PLAYER_HIGHT-20])
-    gameDisplay.blit(screen_text, [x + PLAYER_WIDTH, y-20])
-    gameDisplay.blit(screen_text, [x, y + PLAYER_HIGHT-20])
-    #########################################################################
-
-
-#funkcija koja ga pokrece
-def movePlayer(players, multiplay):
-    checkD = False
-    checkL = False
-    checkD2 = False
-    checkL2 = False
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            sys.exit(0)
-
-
-    keys = pygame.key.get_pressed()
-    # moves hero with key presses
-
-    if keys[pygame.K_LEFT]:
-        checkL = True
-    elif keys[pygame.K_RIGHT]:
-        checkD = True
-    elif keys[pygame.K_SPACE]:
-        players[0].weapon.isActive = False
-    elif keys[pygame.K_ESCAPE]:
-        pygame.quit()
-    elif keys[pygame.K_p]:
-        pause()
-
-    if keys[pygame.K_a]:
-        checkL2 = True
-    elif keys[pygame.K_d]:
-        checkD2 = True
-    elif keys[pygame.K_w]:
-        if multiplay:
-            players[1].weapon.isActive = False
-
-    moving(checkL, checkD, players[0])
-    if multiplay:
-        moving(checkL2, checkD2, players[1])
-
-
-def draw_player(player):
-    gameDisplay.blit(player.weapon.image, player.weapon.rect)
-    gameDisplay.blit(player.image, player.rect) #ovo je da nacrtamo lika
 
 
 def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam podelio na tri funkcije
@@ -267,10 +202,7 @@ def ballSplit(ball, ball_list, player):
         ball_list.append(ball2)
 
 
-def massage_to_screen(msg,color):
-    font = pygame.font.SysFont(None, FONT_SIZE)
-    screen_text = font.render(msg, True, color)
-    gameDisplay.blit(screen_text, [DISPLAY_WIDTH/8, DISPLAY_HEIGHT/4])
+
 
 
 def lifeNumber(players, multiplay):
@@ -287,9 +219,13 @@ def lifeNumber(players, multiplay):
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
+    bg = pygame.image.load("images/backgrounds/background2.jpg")
+    siljci = pygame.image.load("images/siljci.png")
+
     while NoCrash:
 
-        gameDisplay.fill(WHITE)
+        gameDisplay.blit(bg, (0, 0))
+        gameDisplay.blit(siljci, (0, -5))
         lifeNumber(players, multiplay)
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
@@ -373,29 +309,10 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
     quit()
 
 
-def pause():
-    checkPause = False
-    while(checkPause is not True):
-        gameDisplay.fill(WHITE)
-        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE OR 'H' TO GO ON HOME SCREEN", RED)
-        pygame.display.update()
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    quit()
-                if event.key == pygame.K_o:
-                   checkPause = True
-                if event.key == pygame.K_h:
-                    global index
-                    index = 0
-                    start_screen()
-            if event.type == pygame.QUIT:
-                sys.exit(0)
 
 def start_screen():
 
-    bg = pygame.image.load("start_screen_background.jpg")
+    bg = pygame.image.load("images/backgrounds/start_screen_background.jpg")
 
     while screen_check:
         gameDisplay.blit(bg, (0, 0))
@@ -428,7 +345,7 @@ def SinglePlayerAction():
 
 def MultiPlayerAction():
     players = [Player()]
-    player2 = Player('player2.png')
+    player2 = Player('images/players/player2.png')
     players.append(player2)
     i = 0
     for player in players:

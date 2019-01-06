@@ -1,5 +1,7 @@
 import pygame
 from math import sin
+
+
 #sve ono sto nam treba a da bude globalno
 DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 500
@@ -23,7 +25,7 @@ FONT_SIZE = 30
 gameDisplay = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption('Bubble trouble')
 gameDisplay.fill(WHITE)
-a = pygame.image.load('icon.jpg')
+a = pygame.image.load('images/icon.jpg')
 pygame.display.set_icon(a)
 
 
