@@ -319,10 +319,15 @@ def start_screen():
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    quit()
+                    result = MessageBox("Exit", "Do you want to exit")
+                    if result is True:
+                        pygame.quit()
+                        sys.exit(0)
             if event.type == pygame.QUIT:
-                sys.exit(0)
+                result = MessageBox("Exit", "Do you want to exit")
+                if result is True:
+                    pygame.quit()
+                    sys.exit(0)
 
 
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)

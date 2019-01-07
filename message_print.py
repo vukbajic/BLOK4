@@ -1,4 +1,5 @@
 from globalFunc import *
+from globals import *
 
 def massage_to_screen(msg,color):
     font = pygame.font.SysFont(None, FONT_SIZE)

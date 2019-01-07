@@ -1,6 +1,8 @@
 from globals import *
 from weapon import *
 from globalFunc import  *
+from messageBox import *
+from pause import  *
 #klasa lika, to sam sa neta uzeo
 class Player(pygame.sprite.Sprite):
     def __init__(self, image_name='images/players/player.png'):
@@ -50,7 +52,10 @@ def movePlayer(players, multiplay):
     checkL2 = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            sys.exit(0)
+            result = MessageBox("Exit", "Do you want to exit")
+            if result is True:
+                pygame.quit()
+                sys.exit(0)
 
 
     keys = pygame.key.get_pressed()
@@ -63,7 +68,10 @@ def movePlayer(players, multiplay):
     elif keys[pygame.K_SPACE]:
         players[0].weapon.isActive = False
     elif keys[pygame.K_ESCAPE]:
-        pygame.quit()
+        result = MessageBox("Exit", "Do you want to exit")
+        if result is True:
+            pygame.quit()
+            sys.exit(0)
     elif keys[pygame.K_p]:
         pause()
 

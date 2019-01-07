@@ -1,5 +1,7 @@
 from globalFunc import *
 from message_print import *
+from globals import *
+from messageBox import *
 
 def pause():
     checkPause = False
@@ -10,8 +12,10 @@ def pause():
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    quit()
+                    result = MessageBox("Exit", "Do you want to exit")
+                    if result is True:
+                        pygame.quit()
+                        sys.exit(0)
                 if event.key == pygame.K_o:
                    checkPause = True
                 if event.key == pygame.K_h:
@@ -19,6 +23,9 @@ def pause():
                     index = 0
                     start_screen()
             if event.type == pygame.QUIT:
-                sys.exit(0)
+                result = MessageBox("Exit", "Do you want to exit")
+                if result is True:
+                    pygame.quit()
+                    sys.exit(0)
 
 
