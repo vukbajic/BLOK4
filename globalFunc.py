@@ -222,7 +222,9 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
     bg1 = pygame.image.load("images/backgrounds/dock_background.jpg")
     bg = pygame.image.load("images/backgrounds/background2.jpg")
     siljci = pygame.image.load("images/siljci.png")
-
+    font = pygame.font.Font(None, 40)
+    timer = 10
+    dt = 0
     while NoCrash:
 
         gameDisplay.blit(bg1, (0, 500))
@@ -300,11 +302,17 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
                             players[1].life = LIFE
                         ball_List = ballToList()
 
+        timer -= dt
+        if timer <= 0:
+            timer = 10  # Reset it to 10 or do something else.
 
-
+        txt = font.render(str(round(timer, 0)), True, BLACK)
+        gameDisplay.blit(txt, (380, 520))
+        pygame.display.flip()
+        dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
 
         pygame.display.update()
-        clock.tick(30)
+        #clock.tick(30)
 
     pygame.quit()
     quit()
