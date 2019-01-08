@@ -13,7 +13,7 @@ class Player(pygame.sprite.Sprite):
         self.life = LIFE
 
 
-    def set_position(self, x=DISPLAY_WIDTH / 2, y=DISPLAY_HEIGHT):
+    def set_position(self, x=DISPLAY_WIDTH / 2, y=DISPLAY_HEIGHT-50):
         self.rect.centerx, self.rect.bottom = x, y
 
 

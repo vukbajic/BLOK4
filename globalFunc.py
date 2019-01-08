@@ -56,29 +56,29 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
         if ball.new is not True and ball.num <= 3:
             if ball.num == 0:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 200:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 200:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 1:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 250:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 250:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 2:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 300:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 300:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
             elif ball.num == 3:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 350:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 350:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
         if ball.num <= 3 and ball.new is True:
@@ -219,11 +219,13 @@ def lifeNumber(players, multiplay):
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
+    bg1 = pygame.image.load("images/backgrounds/dock_background.jpg")
     bg = pygame.image.load("images/backgrounds/background2.jpg")
     siljci = pygame.image.load("images/siljci.png")
 
     while NoCrash:
 
+        gameDisplay.blit(bg1, (0, 500))
         gameDisplay.blit(bg, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
         lifeNumber(players, multiplay)
@@ -231,7 +233,6 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
         draw_player(players[0])
         if multiplay:
             draw_player(players[1])
-
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
         (xW, yW) = shot(players[0])
