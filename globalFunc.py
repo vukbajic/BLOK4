@@ -336,7 +336,7 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
     siljci = pygame.image.load("images/siljci.png")
 
     font = pygame.font.Font(None, 40)
-    timer = 10
+    timer = 50
     dt = 0
 
 
@@ -427,7 +427,18 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
         timer -= dt
         if timer <= 0:
-            timer = 10  # Reset it to 10 or do something else.
+            players[0].life -= 1
+
+            if multiplay is True:
+                players[1].life -= 1
+
+            massage_to_screen("Time out, you can do it faster",RED)
+            pygame.display.update()
+            pygame.time.delay(2000)
+            timer = 50
+
+
+
 
         txt = font.render(str(round(timer, 0)), True, BLACK)
         gameDisplay.blit(txt, (380, 520))
@@ -439,6 +450,8 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
     pygame.quit()
     quit()
+
+
 
 
 

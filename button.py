@@ -2,6 +2,18 @@ import pygame
 from globals import *
 from globalFunc import *
 
+
+#msg - titl dugmeta
+#x - pozicija na x osi
+#y - pozicija na y osi
+#w - sirina dugmeta
+#h - duzina dugmeta
+#ic - boja dugmeta
+#ac - boja dugmeta kad mis predje preko njega
+#action - funckija koja se izvrsava kada je dugme pritisnuto
+#primer
+#button("1 Player", 630, 20, 140, 50, YELLOW, RED, SinglePlayerAction)
+
 def button(msg,x,y,w,h,ic,ac,action=None):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
