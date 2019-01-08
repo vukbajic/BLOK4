@@ -257,7 +257,7 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
             pygame.display.update()
             pygame.time.delay(1000)
             print(players[0].life)
-            players[0].life -=1
+            players[0].life -= 1
             NoCrash = True
             ball_List = ballToList()
 
