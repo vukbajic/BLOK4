@@ -4,7 +4,7 @@ from math import sin
 
 #sve ono sto nam treba a da bude globalno
 DISPLAY_WIDTH = 800
-DISPLAY_HEIGHT = 500
+DISPLAY_HEIGHT = 550
 BLACK = (0,0,0)
 WHITE = (255,255,255)
 RED = (255, 0, 0)
@@ -21,6 +21,11 @@ WEAPON_WIDTH = 8
 LIFE = 3
 NUMBERLIFES_FONT_SIZE = 50
 FONT_SIZE = 30
+
+bg1 = pygame.image.load("images/backgrounds/dock_background.jpg")
+bg = pygame.image.load("images/backgrounds/background2.jpg")
+bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")
+
 
 gameDisplay = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption('Bubble trouble')

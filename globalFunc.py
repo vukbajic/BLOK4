@@ -57,29 +57,29 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
         if ball.new is not True and ball.num <= 3:
             if ball.num == 0:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 200:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 200:
                     ball.change_y *= -1
                 if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 1:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 250:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 250:
                     ball.change_y *= -1
                 if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 2:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 300:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 300:
                     ball.change_y *= -1
                 if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
             elif ball.num == 3:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 350:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 350:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num]  or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
         if ball.num <= 3 and ball.new is True:
@@ -196,6 +196,7 @@ def weaponBack(player):
 
 def ballSplit(ball, ball_list, player):
 
+    player.score += 10
     ball_list.remove(ball_list[ball.index])
 
     for ball_temp in ball_list:
@@ -218,28 +219,40 @@ def lifeNumber(players, multiplay):
     life = players[0].life.__str__()
     font = pygame.font.SysFont(None,NUMBERLIFES_FONT_SIZE)
     screen_text = font.render(life,True,BLACK)
-    gameDisplay.blit(screen_text, [50,50])
+    gameDisplay.blit(screen_text, [30,515])
     if multiplay:
         life1 = players[1].life.__str__()
         screen_text1 = font.render(life1, True, BLACK)
-        gameDisplay.blit(screen_text1, [DISPLAY_WIDTH-50, 50])
+        gameDisplay.blit(screen_text1, [DISPLAY_WIDTH-30, 515])
 
 
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
-    bg = pygame.image.load("images/backgrounds/background2.jpg")
+    global bg,bg1
     siljci = pygame.image.load("images/siljci.png")
+
+    font = pygame.font.Font(None, 40)
+    timer = 10
+    dt = 0
+
 
     while NoCrash:
 
+        gameDisplay.blit(bg1, (0, 500))
         gameDisplay.blit(bg, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
         lifeNumber(players, multiplay)
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
+        sc = font.render(str(round(players[0].score, 0)), True, BLACK)
+        gameDisplay.blit(sc, (200, 520))
+
+
         if multiplay:
             draw_player(players[1])
+            sc2 = font.render(str(round(players[1].score, 0)), True, BLACK)
+            gameDisplay.blit(sc2, (DISPLAY_WIDTH-200, 520))
 
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
@@ -286,7 +299,8 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
         gameOver = not NoCrash
         while gameOver == True:
 
-            gameDisplay.fill(WHITE)
+            gameDisplay.blit(bg1, (0, 500))
+            gameDisplay.blit(bg, (0, 0))
             massage_to_screen("Game over, press C to play again or ESC to quit", RED)
             pygame.display.update()
 
@@ -308,11 +322,17 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
                             players[1].life = LIFE
                         ball_List = ballToList()
 
+        timer -= dt
+        if timer <= 0:
+            timer = 10  # Reset it to 10 or do something else.
 
-
+        txt = font.render(str(round(timer, 0)), True, BLACK)
+        gameDisplay.blit(txt, (380, 520))
+        pygame.display.flip()
+        dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
 
         pygame.display.update()
-        clock.tick(30)
+        #clock.tick(30)
 
     pygame.quit()
     quit()
@@ -363,7 +383,7 @@ def MultiPlayerAction():
     players.append(player2)
     i = 0
     for player in players:
-        player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT)
+        player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT - 50)
         i+=1
 
     ball_List = ballToList()

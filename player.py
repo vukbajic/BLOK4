@@ -11,9 +11,10 @@ class Player(pygame.sprite.Sprite):
         self.set_position()                                         #poziv funkcije koji ka po difoltu stavi na sredinu
         self.weapon = Weapon()
         self.life = LIFE
+        self.score = 0
 
 
-    def set_position(self, x=DISPLAY_WIDTH / 2, y=DISPLAY_HEIGHT):
+    def set_position(self, x=DISPLAY_WIDTH / 2, y=DISPLAY_HEIGHT - 50):
         self.rect.centerx, self.rect.bottom = x, y
 
 
