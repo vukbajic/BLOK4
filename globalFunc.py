@@ -20,7 +20,8 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     Function to make a new, random ball.
     """
     global index
-    ball = Ball(num, index)
+    #img = pygame.image.load('images/players/player.png')
+    ball = Ball(num, index, 'images/players/player.png')
     index+=1
 
 
@@ -56,29 +57,29 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
         if ball.new is not True and ball.num <= 3:
             if ball.num == 0:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 200:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 200:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 1:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 250:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 250:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
 
             elif ball.num == 2:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 300:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 300:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
             elif ball.num == 3:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 56 or ball.y < 350:
+                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] or ball.y < 350:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] - 56 or ball.x < BALL_SIZE[ball.num]:
+                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
                     ball.change_x *= -1
 
         if ball.num <= 3 and ball.new is True:
@@ -97,18 +98,26 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
     # Draw the balls
     for ball in ball_list:
-        pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
-
+       # pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
+        img = pygame.image.load('images/players/player.png')
+        #images/balls/ball.png
+       # rect = ball.get_rect()
         #proveravam okvire lopte. ovako sam uspeo da nastimam okvir samo prve, velike lopte..
         #mislim da bi bilo bolje da umesto sto crtamo loptu da ubacimo sliku njenu, tu se lakse prate okviri
         ###############################################################################################################
         life = '.'
         font = pygame.font.SysFont(None, 50)
         screen_text = font.render(life, True, BLACK)
+
+        x = ball.x
+        y = ball.y
+        gameDisplay.blit(img,(x,y))
+
         gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
         gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y]) #desno dole
         gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y -BALL_SIZE[ball.num]*1.5]) #desno gore
         gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y]) #LEVO DOLE
+        #gameDisplay.bilt(img, )
 
         ###############################################################################################################
 
@@ -219,15 +228,11 @@ def lifeNumber(players, multiplay):
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
-    bg1 = pygame.image.load("images/backgrounds/dock_background.jpg")
     bg = pygame.image.load("images/backgrounds/background2.jpg")
     siljci = pygame.image.load("images/siljci.png")
-    font = pygame.font.Font(None, 40)
-    timer = 10
-    dt = 0
+
     while NoCrash:
 
-        gameDisplay.blit(bg1, (0, 500))
         gameDisplay.blit(bg, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
         lifeNumber(players, multiplay)
@@ -235,6 +240,7 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
         draw_player(players[0])
         if multiplay:
             draw_player(players[1])
+
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
         (xW, yW) = shot(players[0])
@@ -302,17 +308,11 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
                             players[1].life = LIFE
                         ball_List = ballToList()
 
-        timer -= dt
-        if timer <= 0:
-            timer = 10  # Reset it to 10 or do something else.
 
-        txt = font.render(str(round(timer, 0)), True, BLACK)
-        gameDisplay.blit(txt, (380, 520))
-        pygame.display.flip()
-        dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
+
 
         pygame.display.update()
-        #clock.tick(30)
+        clock.tick(30)
 
     pygame.quit()
     quit()

@@ -5,9 +5,8 @@ from messageBox import *
 
 def pause():
     checkPause = False
-    bg = pygame.image.load("images/backgrounds/one_color_background.jpg")
     while(checkPause is not True):
-        gameDisplay.blit(bg, (0, 0))
+        gameDisplay.fill(WHITE)
         massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE OR 'H' TO GO ON HOME SCREEN", RED)
         pygame.display.update()
         for event in pygame.event.get():

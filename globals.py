@@ -4,7 +4,7 @@ from math import sin
 
 #sve ono sto nam treba a da bude globalno
 DISPLAY_WIDTH = 800
-DISPLAY_HEIGHT = 550
+DISPLAY_HEIGHT = 500
 BLACK = (0,0,0)
 WHITE = (255,255,255)
 RED = (255, 0, 0)
