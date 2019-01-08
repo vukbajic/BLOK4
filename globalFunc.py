@@ -202,7 +202,13 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
     # Draw the balls
     for ball in ball_list:
        # pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
-        img = pygame.image.load('images/players/player.png')
+        img = pygame.image.load('images/balls/ball.png')
+        img = pygame.transform.scale(img, (50, 50))
+        rect = img.get_rect()
+        rect = rect.move((ball.x, ball.y))
+
+        x = ball.x - 29
+        y = ball.y - 23
         #images/balls/ball.png
        # rect = ball.get_rect()
         #proveravam okvire lopte. ovako sam uspeo da nastimam okvir samo prve, velike lopte..
@@ -212,8 +218,8 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
         font = pygame.font.SysFont(None, 50)
         screen_text = font.render(life, True, BLACK)
 
-        x = ball.x
-        y = ball.y
+       # x = ball.x
+       # y = ball.y
         gameDisplay.blit(img,(x,y))
 
         gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
