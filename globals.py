@@ -21,7 +21,7 @@ WEAPON_WIDTH = 8
 LIFE = 3
 NUMBERLIFES_FONT_SIZE = 50
 FONT_SIZE = 30
-
+TIME_PER_LEVEL = 50
 bg1 = pygame.image.load("images/backgrounds/dock_background.jpg")
 bg = pygame.image.load("images/backgrounds/background2.jpg")
 bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")

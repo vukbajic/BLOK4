@@ -338,12 +338,16 @@ def lifeNumber(players, multiplay):
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
-    global bg,bg1
+    global bg,bg1,TIME_PER_LEVEL
     siljci = pygame.image.load("images/siljci.png")
 
     font = pygame.font.Font(None, 40)
-    timer = 50
+    fontTimer = pygame.font.Font(None, 50)
+    timer = TIME_PER_LEVEL
     dt = 0
+
+    for player in players:
+        player.score = 0
 
 
     while NoCrash:
@@ -354,14 +358,14 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
         lifeNumber(players, multiplay)
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
-        sc = font.render(str(round(players[0].score, 0)), True, BLACK)
-        gameDisplay.blit(sc, (200, 520))
+        sc = font.render("SCORE  " + str(round(players[0].score)), True, BLACK)
+        gameDisplay.blit(sc, (140, 520))
 
 
         if multiplay:
             draw_player(players[1])
-            sc2 = font.render(str(round(players[1].score, 0)), True, BLACK)
-            gameDisplay.blit(sc2, (DISPLAY_WIDTH-200, 520))
+            sc2 = font.render("SCORE  " + str(round(players[1].score)), True, BLACK)
+            gameDisplay.blit(sc2, (DISPLAY_WIDTH-260, 520))
 
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
@@ -441,13 +445,13 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
             massage_to_screen("Time out, you can do it faster",RED)
             pygame.display.update()
             pygame.time.delay(2000)
-            timer = 50
+            timer = TIME_PER_LEVEL
 
 
 
 
-        txt = font.render(str(round(timer, 0)), True, BLACK)
-        gameDisplay.blit(txt, (380, 520))
+        txt = fontTimer.render(str(round(timer)), True, BLACK)
+        gameDisplay.blit(txt, (380, 510))
         pygame.display.flip()
         dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
 
@@ -456,6 +460,7 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
     pygame.quit()
     quit()
+
 
 
 
