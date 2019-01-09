@@ -124,7 +124,7 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     """
     global index
     #img = pygame.image.load('images/players/player.png')
-    ball = Ball(num, index, 'images/players/player.png')
+    ball = Ball(num, index, 'images/balls/ball.png')
     index+=1
 
 
@@ -201,31 +201,17 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
     # Draw the balls
     for ball in ball_list:
-       # pygame.draw.circle(gameDisplay, BALL_COLORS[ball.num], [ball.x, ball.y], BALL_SIZE[ball.num])
-        img = pygame.image.load('images/balls/ball.png')
-        img = pygame.transform.scale(img, (50, 50))
-        rect = img.get_rect()
-        rect = rect.move((ball.x, ball.y))
 
-        x = ball.x - 29
-        y = ball.y - 23
-        #images/balls/ball.png
-       # rect = ball.get_rect()
-        #proveravam okvire lopte. ovako sam uspeo da nastimam okvir samo prve, velike lopte..
-        #mislim da bi bilo bolje da umesto sto crtamo loptu da ubacimo sliku njenu, tu se lakse prate okviri
-        ###############################################################################################################
-        life = '.'
-        font = pygame.font.SysFont(None, 50)
-        screen_text = font.render(life, True, BLACK)
+        #koordinate slike lopte
+        x = ball.x - BALL_SIZE[ball.num] + 2
+        y = ball.y - BALL_SIZE[ball.num] + 17
 
-       # x = ball.x
-       # y = ball.y
-        gameDisplay.blit(img,(x,y))
+        gameDisplay.blit(ball.image,(x,y))
 
-        gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
-        gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y]) #desno dole
-        gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y -BALL_SIZE[ball.num]*1.5]) #desno gore
-        gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y]) #LEVO DOLE
+        #gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
+        #gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y]) #desno dole
+        #gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y -BALL_SIZE[ball.num]*1.5]) #desno gore
+        #gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y]) #LEVO DOLE
         #gameDisplay.bilt(img, )
 
         ###############################################################################################################
@@ -308,6 +294,8 @@ def ballSplit(ball, ball_list, player):
     player.score += 10
     ball_list.remove(ball_list[ball.index])
 
+
+
     for ball_temp in ball_list:
         if ball_temp.index > ball.index:
             ball_temp.index -= 1
@@ -320,6 +308,10 @@ def ballSplit(ball, ball_list, player):
         ball2 = make_ball(ball.num + 1, ball.x, ball.y, -1)
         ball_list.append(ball2)
 
+
+    global multiplay
+    if len(ball_list) == 0:
+        nextLevel(multiplay)
 
 
 
@@ -338,30 +330,31 @@ def lifeNumber(players, multiplay):
 
 def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
-    global bg,bg1
+    global bg1,dock,TIME_PER_LEVEL,level
     siljci = pygame.image.load("images/siljci.png")
 
     font = pygame.font.Font(None, 40)
-    timer = 50
+    fontTimer = pygame.font.Font(None, 50)
+    timer = TIME_PER_LEVEL
     dt = 0
 
 
     while NoCrash:
 
-        gameDisplay.blit(bg1, (0, 500))
-        gameDisplay.blit(bg, (0, 0))
+        gameDisplay.blit(dock, (0, 500))
+        gameDisplay.blit(level.background, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
         lifeNumber(players, multiplay)
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
-        sc = font.render(str(round(players[0].score, 0)), True, BLACK)
-        gameDisplay.blit(sc, (200, 520))
+        sc = font.render("SCORE  " + str(round(players[0].score)), True, BLACK)
+        gameDisplay.blit(sc, (140, 520))
 
 
         if multiplay:
             draw_player(players[1])
-            sc2 = font.render(str(round(players[1].score, 0)), True, BLACK)
-            gameDisplay.blit(sc2, (DISPLAY_WIDTH-200, 520))
+            sc2 = font.render("SCORE  " + str(round(players[1].score)), True, BLACK)
+            gameDisplay.blit(sc2, (DISPLAY_WIDTH-260, 520))
 
         (x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
@@ -408,8 +401,8 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
         gameOver = not NoCrash
         while gameOver == True:
 
-            gameDisplay.blit(bg1, (0, 500))
-            gameDisplay.blit(bg, (0, 0))
+            gameDisplay.blit(dock, (0, 500))
+            gameDisplay.blit(level.background, (0, 0))
             massage_to_screen("Game over, press C to play again or ESC to quit", RED)
             pygame.display.update()
 
@@ -441,13 +434,12 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
             massage_to_screen("Time out, you can do it faster",RED)
             pygame.display.update()
             pygame.time.delay(2000)
-            timer = 50
+            timer = TIME_PER_LEVEL
 
 
 
-
-        txt = font.render(str(round(timer, 0)), True, BLACK)
-        gameDisplay.blit(txt, (380, 520))
+        txt = fontTimer.render(str(round(timer)), True, BLACK)
+        gameDisplay.blit(txt, (380, 510))
         pygame.display.flip()
         dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
 
@@ -460,8 +452,24 @@ def gameLoop(ball_List, NoCrash, gameOver, players, multiplay):
 
 
 
+def nextLevel(multiplay):
+    global level
+    global nextlvl
+    nextlvl = True
+    level.ChangeBackgorund()
+    ball_List = ballToList()
+
+    if multiplay is True:
+        MultiPlayerAction()
+    else:
+        SinglePlayerAction()
+
+
 
 def start_screen():
+    global nextlvl
+    nextlvl = False
+
 
     bg = pygame.image.load("images/backgrounds/start_screen_background.jpg")
 
@@ -484,15 +492,17 @@ def start_screen():
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
         button("2 Players", 630, 85, 140, 50, YELLOW, RED,MultiPlayerAction)
         button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
-        button("Options", 630, 215, 140, 50, YELLOW, RED)
+        button("Online", 630, 215, 140, 50, YELLOW, RED)
 
 
         pygame.display.update()
 
 def SinglePlayerAction():
-    player = Player()
-    players = [Player()]
-    players.append(player)
+    global nextlvl,players
+    if nextlvl is not True:
+        player = Player()
+        players = [Player()]
+        players.append(player)
     ball_List = ballToList()
     NoCrash = True
     gameOver = False
@@ -500,9 +510,16 @@ def SinglePlayerAction():
     gameLoop(ball_List, NoCrash, gameOver, players, multiPlay)
 
 def MultiPlayerAction():
-    players = [Player()]
-    player2 = Player('images/players/player2.png')
-    players.append(player2)
+
+    global multiplay,players
+    multiplay = True
+
+    global nextlvl
+    if nextlvl is not True:
+         players = [Player()]
+         player2 = Player('images/players/player2.png')
+         players.append(player2)
+
     i = 0
     for player in players:
         player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT - 50)
