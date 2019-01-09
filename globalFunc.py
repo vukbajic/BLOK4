@@ -124,14 +124,14 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     """
     global index
     #img = pygame.image.load('images/players/player.png')
-    ball = Ball(num, index, 'images/balls/ball.png')
+    ball = Ball(num, index, corx, cory)
     index+=1
-
+    gameDisplay.blit(ball.image,[corx,cory])
 
     # Starting position of the ball.
     # Take into account the ball size so we don't spawn on the edge.
-    ball.x = corx
-    ball.y = cory
+    #ball.x = corx
+    #ball.y = cory
 
     # Speed and direction of rectangle
 
@@ -155,58 +155,69 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
     for ball in ball_list:
         # Move the ball's center
-        ball.x += ball.change_x * 2
-        ball.y += ball.change_y * 2
+        ball.rect = ball.rect.move((ball.change_x*2), (ball.change_y *2))
+        print(ball.rect.top, DISPLAY_HEIGHT - ball.rect.height -55, ball.rect.left, DISPLAY_WIDTH - ball.rect.width)
+        gameDisplay.blit(ball.image, ball.rect)
+
+        life = '.'
+        font = pygame.font.SysFont(None, 50)
+        screen_text = font.render(life, True, BLACK)
+        gameDisplay.blit(screen_text, [ball.rect.left, ball.rect.top - ball.rect.height /(2 / (ball.num+1))])
+        gameDisplay.blit(screen_text, [ball.rect.right, ball.rect.top - ball.rect.height/(2/ (ball.num+1))])
+        gameDisplay.blit(screen_text, [ball.rect.left, ball.rect.bottom - ball.rect.height/(2/ (ball.num+1))])
+        gameDisplay.blit(screen_text, [ball.rect.right, ball.rect.bottom - ball.rect.height/(2/ (ball.num+1))])
+        #ball.x += ball.change_x * 2
+        #ball.y += ball.change_y * 2
 
         if ball.new is not True and ball.num <= 3:
             if ball.num == 0:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 200:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top < 200:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
 
             elif ball.num == 1:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 250:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top < 250:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
 
             elif ball.num == 2:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 300:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top< 300:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num] or ball.x < BALL_SIZE[ball.num]:
+                if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
             elif ball.num == 3:
-                if ball.y > DISPLAY_HEIGHT - BALL_SIZE[ball.num] - 55 or ball.y < 350:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top <  350:
                     ball.change_y *= -1
-                if ball.x > DISPLAY_WIDTH - BALL_SIZE[ball.num]  or ball.x < BALL_SIZE[ball.num]:
+                if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
         if ball.num <= 3 and ball.new is True:
             if ball.num == 0:
-                if ball.y > 200:
+                if ball.rect.top > 200:
                     ball.new = False
             elif ball.num == 1:
-                if ball.y > 250:
+                if ball.rect.top > 250:
                     ball.new = False
             elif ball.num == 2:
-                if ball.y > 300:
+                if ball.rect.top > 300:
                     ball.new = False
             elif ball.num == 3:
-                if ball.y > 350:
+                if ball.rect.top > 350:
                     ball.new = False
 
     # Draw the balls
-    for ball in ball_list:
+    #for ball in ball_list:
 
         #koordinate slike lopte
-        x = ball.x - BALL_SIZE[ball.num] + 2
-        y = ball.y - BALL_SIZE[ball.num] + 17
+        #x = ball.x - BALL_SIZE[ball.num] + 2
+        #y = ball.y - BALL_SIZE[ball.num] + 17
 
-        gameDisplay.blit(ball.image,(x,y))
+        #gameDisplay.blit(ball.image,(x,y))
 
         #gameDisplay.blit(screen_text, [ball.x - (BALL_SIZE[ball.num] ), ball.y-BALL_SIZE[ball.num]*1.5]) #levo gore
         #gameDisplay.blit(screen_text, [ball.x + BALL_SIZE[ball.num] / 2, ball.y]) #desno dole
@@ -226,9 +237,9 @@ def crash(xP, yP, ball_List):                           #funkcija proverava da l
         yP1 = yP -20                                    #y koordinata lika
         xP2 = xP + PLAYER_WIDTH                         #x1 koordinata, do je njegova "desna" strana
 
-        xB1 = ball.x - BALL_SIZE[ball.num]              #x koordinata lopte
-        yB1 = ball.y                                    #y koordinata
-        xB2 = ball.x + BALL_SIZE[ball.num] / 2          #x1 koordinata, desna strana lopte
+        xB1 = ball.rect.left             #x koordinata lopte
+        yB1 = ball.rect.bottom - (ball.rect.height /(2 / (ball.num+1)))                                #y koordinata
+        xB2 = ball.rect.right         #x1 koordinata, desna strana lopte
 
         if yP1 <= yB1 and xP2 >= xB1:                   #tu proveravam da li se ukrstaju koordinate lika i lopte
             if xP1 <= xB2:
@@ -261,9 +272,9 @@ def hit(xW, yW, ball_list, player):
     xW2 = xW + WEAPON_WIDTH
 
     for ball in ball_list:
-        xB1 = ball.x - BALL_SIZE[ball.num]              # x koordinata lopte
-        yB1 = ball.y                                    # y koordinata
-        xB2 = ball.x + BALL_SIZE[ball.num] / 2
+        xB1 = ball.rect.left             # x koordinata lopte
+        yB1 = ball.rect.bottom - (ball.rect.height /(2 / (ball.num+1)))                                  # y koordinata
+        xB2 = ball.rect.right
 
         global checkSplit
         checkSplit = False
@@ -303,9 +314,9 @@ def ballSplit(ball, ball_list, player):
     index -= 1
 
     if ball.num < 3:
-        ball1 = make_ball(ball.num + 1, ball.x, ball.y, 1)
+        ball1 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, 1)
         ball_list.append(ball1)
-        ball2 = make_ball(ball.num + 1, ball.x, ball.y, -1)
+        ball2 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, -1)
         ball_list.append(ball2)
 
 
