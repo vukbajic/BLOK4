@@ -7,7 +7,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(image_name)          #dodajemo mu sliku
         self.rect = self.image.get_rect()                           #uzimamo koordinate i velicinu slike (x,y,visina,sirina)
         self.set_position()                                         #poziv funkcije koji ka po difoltu stavi na sredinu
-        self.weapon = Weapon()
+        self.weapon = Weapon(self.rect.left)
         self.life = LIFE
         self.score = 0
 

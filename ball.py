@@ -13,7 +13,7 @@ class Ball:
         self.image = pygame.transform.scale(self.image,(int(round(50/(self.num+1),0)),int (round(50/(self.num+1),0))))
         self.rect = self.image.get_rect()
         self.set_position(x, y)
-        print(self.rect, x, y)
+
 
 
     def set_position(self,x, y):

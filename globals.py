@@ -11,7 +11,7 @@ WHITE = (255,255,255)
 RED = (255, 0, 0)
 GREEN = (0,255,0)
 YELLOW = (255,255,0)
-BALL_SIZE = (30, 15, 10, 5)
+BALL_SIZE = (5, 10, 15, 30)
 BALL_COLORS = (RED,GREEN,YELLOW,BLACK)
 PLAYER_SPEED = 7
 PLAYER_HIGHT = 37
@@ -26,9 +26,10 @@ TIME_PER_LEVEL = 50
 dock = pygame.image.load("images/backgrounds/dock_background.jpg")
 
 level = level()
-
+timer = TIME_PER_LEVEL
 multiplay = False
-
+level_ball_size = 3
+level_ball_count = 1
 players = []
 
 bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")
