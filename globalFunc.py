@@ -8,36 +8,14 @@ from globals import  *
 from button import *
 from message_print import *
 from messageBox import *
+from powers import *
+from client import *
 
-
-check = False
-
-
-def pause():
-    checkPause = False
-    global bg_one_color
-    while(checkPause is not True):
-        gameDisplay.blit(bg_one_color, (0, 0))
-        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE OR 'H' TO GO ON HOME SCREEN", RED)
-        pygame.display.update()
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    result = MessageBox("Exit", "Do you want to exit")
-                    if result is True:
-                        pygame.quit()
-                        sys.exit(0)
-                if event.key == pygame.K_o:
-                   checkPause = True
-                if event.key == pygame.K_h:
-                    global index
-                    index = 0
-                    start_screen()
-            if event.type == pygame.QUIT:
-                result = MessageBox("Exit", "Do you want to exit")
-                if result is True:
-                    pygame.quit()
-                    sys.exit(0)
+#region player_logic
+#check = False
+def draw_player(player):
+    gameDisplay.blit(player.weapon.image, player.weapon.rect)
+    gameDisplay.blit(player.image, player.rect) #ovo je da nacrtamo lika
 
 
 
@@ -101,14 +79,26 @@ def movePlayer(players, multiplay):
     if multiplay:
         moving(checkL2, checkD2, players[1])
 
+def weaponBack(player):
+    player.weapon.rect = player.rect
+    player.weapon.rect = player.weapon.rect.move(7, 0)
+    player.weapon.isActive = True
+    global checkSplit
+    checkSplit = True
 
-def draw_player(player):
-    gameDisplay.blit(player.weapon.image, player.weapon.rect)
-    gameDisplay.blit(player.image, player.rect) #ovo je da nacrtamo lika
+def lifeNumber(players, multiplay):
+    life = players[0].life.__str__()
+    font = pygame.font.SysFont(None, NUMBERLIFES_FONT_SIZE)
+    screen_text = font.render(life, True, BLACK)
+    gameDisplay.blit(screen_text, [30, 515])
+    if multiplay:
+        life1 = players[1].life.__str__()
+        screen_text1 = font.render(life1, True, BLACK)
+        gameDisplay.blit(screen_text1, [DISPLAY_WIDTH - 30, 515])
 
+#endregion
 
-
-
+#region ball_logic
 def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam podelio na tri funkcije
     """                                         #ovo je funkcija koja pravi lopte
     Function to make a new, random ball.
@@ -201,7 +191,35 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
     # Limit to 20 frames per second
     pygame.time.delay(20)
 
+def ballSplit(ball, ball_list, player):
 
+    player.score += 10
+    ball_list.remove(ball_list[ball.index])
+
+
+
+    for ball_temp in ball_list:
+        if ball_temp.index > ball.index:
+            ball_temp.index -= 1
+    global index
+    index -= 1
+
+    if ball.num < 3:
+        ball1 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, 1)
+        ball_list.append(ball1)
+        ball2 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, -1)
+        ball_list.append(ball2)
+
+
+    global multiplay
+    if len(ball_list) == 0:
+        nextLevel(multiplay)
+
+
+
+#endregion
+
+#region collision
 def crash(xP, yP, ball_List):                           #funkcija proverava da li je doslo do sudara izmedju lopte i lika
     for ball in ball_List:
         xP1 = xP                                        #x koordinata lika
@@ -263,51 +281,10 @@ def hit(ball_list, player):
                 if(checkSplit):
                     ballSplit(ball, ball_list, player)
 
-def weaponBack(player):
-    player.weapon.rect = player.rect
-    player.weapon.rect = player.weapon.rect.move(7, 0)
-    player.weapon.isActive = True
-    global checkSplit
-    checkSplit = True
 
+#endregion
 
-def ballSplit(ball, ball_list, player):
-
-    player.score += 10
-    ball_list.remove(ball_list[ball.index])
-
-
-
-    for ball_temp in ball_list:
-        if ball_temp.index > ball.index:
-            ball_temp.index -= 1
-    global index
-    index -= 1
-
-    if ball.num < 3:
-        ball1 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, 1)
-        ball_list.append(ball1)
-        ball2 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, -1)
-        ball_list.append(ball2)
-
-
-    global multiplay
-    if len(ball_list) == 0:
-        nextLevel(multiplay)
-
-
-
-
-def lifeNumber(players, multiplay):
-    life = players[0].life.__str__()
-    font = pygame.font.SysFont(None,NUMBERLIFES_FONT_SIZE)
-    screen_text = font.render(life,True,BLACK)
-    gameDisplay.blit(screen_text, [30,515])
-    if multiplay:
-        life1 = players[1].life.__str__()
-        screen_text1 = font.render(life1, True, BLACK)
-        gameDisplay.blit(screen_text1, [DISPLAY_WIDTH-30, 515])
-
+#region loops
 def gameLoopSingePlayer(ball_List,players, multiplay):
 
     NoCrash = True
@@ -325,6 +302,7 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
 
     while NoCrash:
 
+
         gameDisplay.blit(dock, (0, 500))
         gameDisplay.blit(level.background, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
@@ -341,14 +319,15 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
         hit(ball_List, players[0])
 
 
+
         NoCrash = crash(players[0].rect.left, players[0].rect.top, ball_List)
         # ako dodje do sudara i lik ima jos zivota
         if not NoCrash and players[0].life > 1:
-            if players[0].life == 3:
-                massage_to_screen("Two lifes remaining!", RED, -50, size="medium")  # menjao
+            if players[0].life == 2:
+                massage_to_screen("1 life remaining!", RED, -50, size="medium")  # menjao
                 massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
             else:
-                massage_to_screen("One life remaining!", RED, -50, size="medium")  # menjao
+                massage_to_screen(str(players[0].life - 1) + " lifes remaining!", RED, -50, size="medium")  # menjao
                 massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
             timer = TIME_PER_LEVEL
             pygame.display.update()
@@ -359,12 +338,12 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
             ball_List = ballToList()
 
         if timeOut and players[0].life > 0:
-            if players[0].life == 2:
+            if players[0].life == 1:
                 massage_to_screen("Time out!", RED, -50, size = "large")
-                massage_to_screen("Two lifes remaining!", BLACK, 50, size="medium")  # menjao
+                massage_to_screen("1 life remaining!", BLACK, 50, size="medium")  # menjao
             else:
                 massage_to_screen("Time out!", RED, -50, size="large")
-                massage_to_screen("One life remaining!", BLACK, 50, size="medium")  # menjao
+                massage_to_screen(str(players[0].life - 1) +  " lifes remaining!", BLACK, 50, size="medium")  # menjao
 
             timer = TIME_PER_LEVEL
             pygame.display.update()
@@ -423,6 +402,10 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
         lvl = font.render(("Level:  " + str(round(level.number))), True, BLACK)
         gameDisplay.blit(lvl, (360, 20))
 
+        timerCheck = generateRandomPower(timer,players)
+        if timerCheck:
+            timer += 10
+
         pygame.display.update()
 
     pygame.quit()
@@ -447,6 +430,7 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
     timeOut = False
 
     while NoCrash1 and NoCrash2:
+
 
         gameDisplay.blit(dock, (0, 500))
         gameDisplay.blit(level.background, (0, 0))
@@ -476,11 +460,11 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
         NoCrash1 = crash(players[0].rect.left, players[0].rect.top, ball_List)
         #ako dodje do sudara i lik ima jos zivota
         if not NoCrash1 and players[0].life >1:
-            if players[0].life == 3:
-                massage_to_screen("Two lifes remaining!", RED, -50, size="medium")  # menjao
+            if players[0].life == 2:
+                massage_to_screen("1 life remaining!", RED, -50, size="medium")  # menjao
                 massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
             else:
-                massage_to_screen("One life remaining!", RED, -50, size="medium")  # menjao
+                massage_to_screen(str(players[0].life - 1) +  " lifes remaining!", RED, -50, size="medium")  # menjao
                 massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
             timer = TIME_PER_LEVEL
             pygame.display.update()
@@ -488,21 +472,25 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
             #print(players[0].life)
             players[0].life -= 1
             NoCrash1 = True
+            setStartPosition(players, -18)
             ball_List = ballToList()
 
 
         NoCrash2 = crash(players[1].rect.left, players[1].rect.top, ball_List)
         if not NoCrash2 and players[1].life > 1:
             if players[1].life == 3:
-                massage_to_screen("Two lifes remaining!", RED, -50, size="medium")  # menjao
-                massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
-            else:
-                massage_to_screen("One life remaining!", RED, -50, size="medium")  # menjao
-                massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
+                if players[0].life == 2:
+                    massage_to_screen(1 + " life remaining!", RED, -50, size="medium")  # menjao
+                    massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
+                else:
+                    massage_to_screen(str(players[1].life - 1)  + " lifes remaining!", RED, -50, size="medium")  # menjao
+                    massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
             pygame.display.update()
+            timer = TIME_PER_LEVEL
             pygame.time.delay(1000)
             players[1].life -= 1
             NoCrash2 = True
+            setStartPosition(players, -18)
             ball_List = ballToList()
 
         if timeOut and players[0].life > 0:
@@ -517,6 +505,7 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
             pygame.display.update()
             pygame.time.delay(1000)
             timeOut = False
+            setStartPosition(players, -18)
             ball_List = ballToList()
 
 
@@ -568,6 +557,7 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
                         level_ball_count = 1
                         players[0].score = 0
                         players[1].score = 0
+                        setStartPosition(players, -18)
                         ball_List = ballToList()
 
 
@@ -598,45 +588,18 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
         lvl = font.render(("Level:  " + str(round(level.number))), True, BLACK)
         gameDisplay.blit(lvl, (360, 20))
 
+        timerCheck = generateRandomPower(timer, players)
+        if timerCheck:
+            timer += 10
 
         pygame.display.update()
 
     pygame.quit()
     quit()
 
+#endregion
 
-def nextLevel(multiplay):
-    global level
-    global nextlvl,level_ball_count,level_ball_size
-    nextlvl = True
-    level.ChangeBackgorund()
-    level.number += 1
-    ball_List = ballToList()
-
-    gameDisplay.blit(bg_one_color, (0, 0))
-    massage_to_screen(("Next level: " + str(level.number)),RED, 0, size = "medium")
-    pygame.display.update()
-    pygame.time.delay(1000)
-
-    if level_ball_size > 0:
-        if level_ball_count == 2:
-            level_ball_size -= 1
-            level_ball_count = 1
-        else:
-            level_ball_count = 2
-    else:
-        level_ball_count += 1
-
-    if multiplay is True:
-        global  players
-        for player in players:
-            weaponBack(player)
-        MultiPlayerAction()
-    else:
-        SinglePlayerAction()
-
-
-
+#region start
 def start_screen():
     global nextlvl
     nextlvl = False
@@ -668,20 +631,62 @@ def start_screen():
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
         button("2 Players", 630, 85, 140, 50, YELLOW, RED,MultiPlayerAction)
         button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
-        button("Online", 630, 215, 140, 50, YELLOW, RED)
+        button("Online", 630, 215, 140, 50, YELLOW, RED,OnlineAction)
 
 
         pygame.display.update()
 
+def OnlineAction():
+    enemySocket = connect()
+    temp = enemySocket.getpeername()
+    enemyaddr = temp[0]
+    myaddr = socket.gethostbyname(socket.gethostname())
+
+    playerNum = compareAddrs(myaddr,enemyaddr)
+
+    while True:
+        ExcangeCoords(enemySocket,players,playerNum)
+
+
+def compareAddrs(addr1,addr2):
+
+    addrInt1 = int(re.sub('[.]', '', addr1))
+    addrInt2 = int(re.sub('[.]', '', addr2))
+
+    if addrInt1 > addrInt2:
+        return 0
+    else:
+        return 1
+
+def ExcangeCoords(socket,players,playerNum):
+
+    files_to_send = players[playerNum].rect
+    socket.sendall(files_to_send)
+
+    data = socket.recv(1024)
+    if playerNum == 0:
+        players[1].rect = data
+    else:
+        players[0].rect = data
+
+    return players
+
+def setStartPosition(players, x):
+    i = 0
+    for player in players:
+        player.weapon.set_position((DISPLAY_WIDTH - PLAYER_WIDTH*1.5) * i + PLAYER_WIDTH*1.5, DISPLAY_HEIGHT + x)
+        player.set_position((DISPLAY_WIDTH - PLAYER_WIDTH * 1.5) * i + PLAYER_WIDTH, DISPLAY_HEIGHT - 50)
+        i += 1
+
 def SinglePlayerAction():
-    global nextlvl,players,multiPlay
+    global nextlvl, players, multiPlay
     if nextlvl is not True:
         player = Player()
         players = [Player()]
         players.append(player)
     ball_List = ballToList()
     multiPlay = False
-    gameLoopSingePlayer(ball_List,players, multiPlay)
+    gameLoopSingePlayer(ball_List, players, multiPlay)
 
 def MultiPlayerAction():
 
@@ -697,20 +702,81 @@ def MultiPlayerAction():
 
     i = 0
     if nextlvl:
-        for player in players:
-            player.weapon.set_position(DISPLAY_WIDTH / 3 * (i + 1) + 7, DISPLAY_HEIGHT -20)
-            player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT - 50)
-            i+=1
+        setStartPosition(players, -18)
     else:
-        for player in players:
-            player.weapon.set_position(DISPLAY_WIDTH / 3 * (i + 1) + 7, DISPLAY_HEIGHT + 480)
-            player.set_position(DISPLAY_WIDTH/3 * (i+1), DISPLAY_HEIGHT - 50)
-            i+=1
+        setStartPosition(players, 480)
 
 
     ball_List = ballToList()
 
     multiPlay = True
     gameLoopMultiPlayer(ball_List,players, multiPlay)
+
+#endregion
+
+#region common
+def pause():
+    checkPause = False
+    global bg_one_color
+    while(checkPause is not True):
+        gameDisplay.blit(bg_one_color, (0, 0))
+        massage_to_screen("PAUSE, PRESS 'O' TO CONTUNUE OR 'H' TO GO ON HOME SCREEN", RED)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    result = MessageBox("Exit", "Do you want to exit")
+                    if result is True:
+                        pygame.quit()
+                        sys.exit(0)
+                if event.key == pygame.K_o:
+                   checkPause = True
+                if event.key == pygame.K_h:
+                    global index
+                    index = 0
+                    start_screen()
+            if event.type == pygame.QUIT:
+                result = MessageBox("Exit", "Do you want to exit")
+                if result is True:
+                    pygame.quit()
+                    sys.exit(0)
+
+
+def nextLevel(multiplay):
+    global level
+    global nextlvl,level_ball_count,level_ball_size,allowPower
+    allowPower = True
+    nextlvl = True
+    level.ChangeBackgorund()
+    level.number += 1
+    ball_List = ballToList()
+
+    gameDisplay.blit(bg_one_color, (0, 0))
+    massage_to_screen(("Next level: " + str(level.number)),RED, 0, size = "medium")
+    pygame.display.update()
+    pygame.time.delay(1000)
+
+    if level_ball_size > 0:
+        if level_ball_count == 2:
+            level_ball_size -= 1
+            level_ball_count = 1
+        else:
+            level_ball_count = 2
+    else:
+        level_ball_count += 1
+
+    if multiplay is True:
+        global  players
+        for player in players:
+            weaponBack(player)
+        MultiPlayerAction()
+    else:
+        SinglePlayerAction()
+
+#endregion
+
+
+
+
 
 
