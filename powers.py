@@ -1,34 +1,104 @@
 from globals import *
+from random import randint
+from math import fmod
 
-lifePowerImage = pygame.image.load("images/powers/heart.png")
-clockPowerImage = pygame.image.load("images/powers/clock.png")
-coinPowerImage = pygame.image.load("images/powers/coin.png")
+lifePowerImage = "images/powers/heart.png"
+clockPowerImage = "images/powers/clock.png"
+coinPowerImage = "images/powers/coin.png"
 
 class power():
     def __init__(self, image_name):
         self.image = pygame.image.load(image_name)  # dodajemo mu sliku
         self.rect = self.image.get_rect()  # uzimamo koordinate i velicinu slike (x,y,visina,sirina)
+        self.name = ""
         self.set_position()  # poziv funkcije koji ka po difoltu stavi na sredinu
 
-    def set_position(self, x=DISPLAY_WIDTH / 2, y=DISPLAY_HEIGHT - 50):
+    def set_position(self, x=500, y=500):
             self.rect.centerx, self.rect.bottom = x, y
 
 def generatePowerList():
     powers = []
     power1 = power(lifePowerImage)
+    power1.name = "life"
     power2 = power(clockPowerImage)
+    power2.name = "time"
     power3 = power(coinPowerImage)
+    power3.name = "score"
+    power4 = power(coinPowerImage)
+    power4.name = "score"
     powers.append(power1)
     powers.append(power2)
     powers.append(power3)
+    powers.append(power4)
 
     return powers
 
-def generateRandomPower():
+def generateRandomPower(timer,players):
     powers = generatePowerList()
-    global timer,gameDisplay
-    if timer % 10:
-        index = random(0,2)
-        currentPower = powers[index]
+    global gameDisplay,allowPower,start_time,currentPower,TIME_PER_LEVEL
+    timer = int(timer)
+    timerCheck = False
+
+   # mod = randint(15,20)
+    if allowPower:
+        if timer % 10 == 0 and timer != 0 and timer != TIME_PER_LEVEL and timer != start_time:
+            start_time = timer
+            index = randint(0,3)
+            currentPower = powers[index]
+            randX = randint(25,775)
+            currentPower.set_position(randX,500)
+            allowPower = False
+
+    else:
         gameDisplay.blit(currentPower.image, currentPower.rect)  # ovo je da nacrtamo lika
+        allowPower = False
+        if start_time - int(timer) >= 4:
+            allowPower = True
+        check,player = checkCoordinates(currentPower,players)
+        if check:
+             timerCheck = applayPower(currentPower,player,timer)
+
+
+
+    return  timerCheck
+
+
+
+
+def checkCoordinates(currentPower,players):
+
+    global  start_time
+
+    for player in players:
+        xPlayerLeft = player.rect.left
+        xPlayerRight = player.rect.right
+
+        xPowerLeft = currentPower.rect.left
+        xPowerRight = currentPower.rect.right
+
+        if xPlayerLeft <= xPowerLeft and xPlayerRight >= xPowerLeft:
+            if xPowerLeft <= xPowerRight:
+                start_time = 0
+                return True,player
+
+        if xPlayerLeft <= xPowerLeft and xPlayerLeft <= xPowerRight:
+            if xPowerRight <= xPowerLeft:
+                start_time = 0
+                return True,player
+
+    return False,None
+
+def applayPower(power,player,timer):
+    global allowPower
+    allowPower = True
+    if power.name == "life":
+        player.life += 1
+    elif power.name == "time":
+        return  True
+    elif power.name == "score":
+        player.score += 50
+
+
+
+    return  False
 
