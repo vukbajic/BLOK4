@@ -10,6 +10,7 @@ from message_print import *
 from messageBox import *
 from powers import *
 from client import *
+import socket,select,queue
 
 #region player_logic
 #check = False
@@ -91,7 +92,8 @@ def lifeNumber(players, multiplay):
     font = pygame.font.SysFont(None, NUMBERLIFES_FONT_SIZE)
     screen_text = font.render(life, True, BLACK)
     gameDisplay.blit(screen_text, [30, 515])
-    if multiplay:
+    global online
+    if multiplay or online:
         life1 = players[1].life.__str__()
         screen_text1 = font.render(life1, True, BLACK)
         gameDisplay.blit(screen_text1, [DISPLAY_WIDTH - 30, 515])
@@ -117,7 +119,7 @@ def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam p
     # Speed and direction of rectangle
 
     ball.change_x = direction
-    ball.change_y = 4
+    ball.change_y = BALL_SPEED[num]
 
     return ball
 
@@ -211,9 +213,9 @@ def ballSplit(ball, ball_list, player):
         ball_list.append(ball2)
 
 
-    global multiplay
+    global multiplay,online
     if len(ball_list) == 0:
-        nextLevel(multiplay)
+        nextLevel(multiplay,online)
 
 
 
@@ -306,9 +308,11 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
         gameDisplay.blit(dock, (0, 500))
         gameDisplay.blit(level.background, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
-        lifeNumber(players, multiplay)
+
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
+        gameDisplay.blit(dock, (0, 500))
+        lifeNumber(players, multiplay)
         sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
         gameDisplay.blit(sc, (140, 520))
 
@@ -597,6 +601,186 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
     pygame.quit()
     quit()
 
+
+def onlineGameLoop(ball_List, players,online,addr,port,playerNum):
+    NoCrash1 = True
+    NoCrash2 = True
+    gameOver1 = False
+    gameOver2 = False
+
+    global bg1, dock, TIME_PER_LEVEL, level, timer
+
+    siljci = pygame.image.load("images/siljci.png")
+
+    font = pygame.font.Font(None, 40)
+    fontTimer = pygame.font.Font(None, 50)
+    timer = TIME_PER_LEVEL
+    dt = 0
+    timeOut = False
+
+    soc = setUpConnection(playerNum, addr, port)
+
+    while NoCrash1 and NoCrash2:
+
+        ExcangeCoords(soc, players, playerNum)
+        #pygame.display.update()
+
+        gameDisplay.blit(dock, (0, 500))
+        gameDisplay.blit(level.background, (0, 0))
+        gameDisplay.blit(siljci, (0, -5))
+        lifeNumber(players, multiplay)
+        # printovi su samo zbog lakseg dibaga
+        draw_player(players[0])
+        sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
+        gameDisplay.blit(sc, (140, 520))
+
+        draw_player(players[1])
+        sc2 = font.render("Score  " + str(round(players[1].score)), True, BLACK)
+        gameDisplay.blit(sc2, (DISPLAY_WIDTH - 260, 520))
+
+        # (x, y, c, d) = players[0].rect
+        movePlayer(players, online)
+        shot(players[0])
+        moveBall(ball_List)
+        hit(ball_List, players[0])
+        movePlayer(players, online)
+        shot(players[1])
+        hit(ball_List, players[1])
+
+        NoCrash1 = crash(players[0].rect.left, players[0].rect.top, ball_List)
+        # ako dodje do sudara i lik ima jos zivota
+        if not NoCrash1 and players[0].life > 1:
+            if players[0].life == 2:
+                massage_to_screen("1 life remaining!", RED, -50, size="medium")  # menjao
+                massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
+            else:
+                massage_to_screen(str(players[0].life - 1) + " lifes remaining!", RED, -50, size="medium")  # menjao
+                massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
+            timer = TIME_PER_LEVEL
+            pygame.display.update()
+            pygame.time.delay(1000)
+            # print(players[0].life)
+            players[0].life -= 1
+            NoCrash1 = True
+            setStartPosition(players, -18)
+            ball_List = ballToList()
+
+        NoCrash2 = crash(players[1].rect.left, players[1].rect.top, ball_List)
+        if not NoCrash2 and players[1].life > 1:
+            if players[1].life == 3:
+                if players[0].life == 2:
+                    massage_to_screen(1 + " life remaining!", RED, -50, size="medium")  # menjao
+                    massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
+                else:
+                    massage_to_screen(str(players[1].life - 1) + " lifes remaining!", RED, -50, size="medium")  # menjao
+                    massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
+            pygame.display.update()
+            timer = TIME_PER_LEVEL
+            pygame.time.delay(1000)
+            players[1].life -= 1
+            NoCrash2 = True
+            setStartPosition(players, -18)
+            ball_List = ballToList()
+
+        if timeOut and players[0].life > 0:
+            if players[0].life == 2:
+                massage_to_screen("Time out!", RED, -50, size="large")
+                massage_to_screen("Two lifes remaining!", BLACK, 50, size="medium")  # menjao
+            else:
+                massage_to_screen("Time out!", RED, -50, size="large")
+                massage_to_screen("One life remaining!", BLACK, 50, size="medium")  # menjao
+
+            timer = TIME_PER_LEVEL
+            pygame.display.update()
+            pygame.time.delay(1000)
+            timeOut = False
+            setStartPosition(players, -18)
+            ball_List = ballToList()
+
+        if not timeOut:
+            gameOver1 = not NoCrash1
+            gameOver2 = not NoCrash2
+
+        while gameOver1 or gameOver2:
+
+            gameDisplay.blit(dock, (0, 500))
+            gameDisplay.blit(level.background, (0, 0))
+            massage_to_screen("Game over", RED, -50, size="large")  # menjao
+            massage_to_screen("Press C to play again or ESC to quit", BLACK, 50, size="small")  # menjao
+
+            timer = TIME_PER_LEVEL
+
+            if players[0].life == players[1].life:
+                massage_to_screen_down("DRAW", RED)
+            elif players[0].life < players[1].life:
+                massage_to_screen_down("PLAYER 2 WINS", RED)
+            else:
+                massage_to_screen_down("PLAYER 1 WINS", RED)
+
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        NoCrash1 = False
+                        gameOver1 = False
+                        NoCrash2 = False
+                        gameOver2 = False
+                    if event.key == pygame.QUIT:
+                        NoCrash1 = False
+                        gameOver1 = False
+                        NoCrash2 = False
+                        gameOver2 = False
+                    if event.key == pygame.K_c:
+                        print('C')
+                        NoCrash1 = True
+                        NoCrash2 = True
+                        gameOver1 = False
+                        gameOver2 = False
+                        players[0].life = LIFE
+                        players[1].life = LIFE
+                        level.number = 1
+                        level_ball_size = 3
+                        level_ball_count = 1
+                        players[0].score = 0
+                        players[1].score = 0
+                        setStartPosition(players, -18)
+                        ball_List = ballToList()
+
+        timer -= dt
+        if timer <= 0:
+            if (players[0].life - 1 == 0):
+                timeOut = True
+                gameOver1 = True
+            else:
+                timeOut = True
+
+            players[0].life -= 1
+
+            if (players[1].life - 1 == 0):
+                timeOut = True
+                gameOver2 = True
+            else:
+                timeOut = True
+            players[1].life -= 1
+
+        txt = fontTimer.render(str(round(timer)), True, BLACK)
+        gameDisplay.blit(txt, (380, 510))
+
+        dt = clock.tick(30) / 1000  # / 1000 to convert to seconds.
+
+        lvl = font.render(("Level:  " + str(round(level.number))), True, BLACK)
+        gameDisplay.blit(lvl, (360, 20))
+
+        timerCheck = generateRandomPower(timer, players)
+        if timerCheck:
+            timer += 10
+
+        pygame.display.update()
+
+    pygame.quit()
+    quit()
+
 #endregion
 
 #region start
@@ -631,21 +815,13 @@ def start_screen():
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
         button("2 Players", 630, 85, 140, 50, YELLOW, RED,MultiPlayerAction)
         button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
-        button("Online", 630, 215, 140, 50, YELLOW, RED,OnlineAction)
+        button("Online", 630, 215, 140, 50, YELLOW, RED,startOnline)
 
 
         pygame.display.update()
 
-def OnlineAction():
-    enemySocket = connect()
-    temp = enemySocket.getpeername()
-    enemyaddr = temp[0]
-    myaddr = socket.gethostbyname(socket.gethostname())
 
-    playerNum = compareAddrs(myaddr,enemyaddr)
 
-    while True:
-        ExcangeCoords(enemySocket,players,playerNum)
 
 
 def compareAddrs(addr1,addr2):
@@ -658,16 +834,66 @@ def compareAddrs(addr1,addr2):
     else:
         return 1
 
-def ExcangeCoords(socket,players,playerNum):
 
-    files_to_send = players[playerNum].rect
-    socket.sendall(files_to_send)
+def setUpConnection(playerNum,addr,port):
 
-    data = socket.recv(1024)
     if playerNum == 0:
-        players[1].rect = data
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # server.setblocking(0)
+        server.bind(('192.168.100.214', 502))
+        server.listen(5)
+
+        s, client_address = server.accept()
+
+        return s
     else:
-        players[0].rect = data
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((addr,int(port)))
+
+        return  client
+
+def ExcangeCoords(s,players,playerNum):
+   
+    if playerNum == 0:
+        data = s.recv(1024)
+        my_decoded_str = data.decode()
+        type(my_decoded_str)
+
+        cords = my_decoded_str.split("+")
+
+        players[1].rect.left = int(cords[0])
+        players[1].score = int(cords[1])
+        players[1].life = int(cords[2])
+        players[1].weapon.rect.left = int(cords[3])
+        players[1].weapon.rect.right = int(cords[4])
+        players[1].weapon.rect.top = int(cords[5])
+
+        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(players[playerNum].weapon.rect.right) + "+" + str(players[playerNum].weapon.rect.top)
+        asbYte = str.encode(asStr)
+        type(asbYte)
+        s.sendall(asbYte)
+
+    else:
+        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(
+        players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(players[playerNum].weapon.rect.right) + "+" + str(
+        players[playerNum].weapon.rect.top)
+        asByte = str.encode(asStr)
+        print(asStr + "POSLAJO")
+        type(asByte)
+        s.sendall(asByte)
+
+        data1 = s.recv(1024)
+        asStr1 = data1.decode()
+        type(asStr1)
+        print(asStr1 + " PRIMIJO")
+        cords = asStr1.split("+")
+
+        players[0].rect.left = int(cords[0])
+        players[0].score = int(cords[1])
+        players[0].life = int(cords[2])
+        players[0].weapon.rect.left = int(cords[3])
+        players[0].weapon.rect.right = int(cords[4])
+        players[0].weapon.rect.top = int(cords[5])
 
     return players
 
@@ -677,6 +903,9 @@ def setStartPosition(players, x):
         player.weapon.set_position((DISPLAY_WIDTH - PLAYER_WIDTH*1.5) * i + PLAYER_WIDTH*1.5, DISPLAY_HEIGHT + x)
         player.set_position((DISPLAY_WIDTH - PLAYER_WIDTH * 1.5) * i + PLAYER_WIDTH, DISPLAY_HEIGHT - 50)
         i += 1
+
+
+
 
 def SinglePlayerAction():
     global nextlvl, players, multiPlay
@@ -712,6 +941,25 @@ def MultiPlayerAction():
     multiPlay = True
     gameLoopMultiPlayer(ball_List,players, multiPlay)
 
+
+def startOnline():
+    global enemyAddr,enemyPort
+    enemyAddr, enemyPort = connect()
+    global players
+    players = [Player()]
+    players.append(Player('images/players/player2.png'))
+    OnlineAction()
+def OnlineAction():
+
+    global online,enemyAddr,enemyPort
+    online = True
+    global players
+    ball_List = ballToList()
+    playerNum = compareAddrs('192.168.100.214',enemyAddr)
+
+    onlineGameLoop(ball_List,players,online,enemyAddr,enemyPort,playerNum)
+
+
 #endregion
 
 #region common
@@ -742,7 +990,7 @@ def pause():
                     sys.exit(0)
 
 
-def nextLevel(multiplay):
+def nextLevel(multiplay,online):
     global level
     global nextlvl,level_ball_count,level_ball_size,allowPower
     allowPower = True
@@ -765,8 +1013,13 @@ def nextLevel(multiplay):
     else:
         level_ball_count += 1
 
-    if multiplay is True:
-        global  players
+    global players
+    if online is True:
+        for player in players:
+            weaponBack(player)
+        OnlineAction()
+    elif multiplay is True:
+
         for player in players:
             weaponBack(player)
         MultiPlayerAction()
@@ -777,6 +1030,38 @@ def nextLevel(multiplay):
 
 
 
+
+
+    """ inputs = [server]
+
+        while inputs:
+            readable, writable, exceptional = select.select(
+                inputs, outputs, inputs)
+            for s in readable:
+                if s is server:
+                    connection, client_address = s.accept()
+                    connection.setblocking(0)
+                    inputs.append(connection)
+                    message_queues[connection] = queue.Queue()
+                else:
+                     data = s.recv(1024)
+                     my_decoded_str = data.decode()
+                     type(my_decoded_str)
+
+                     print("PRIMLJENO " + my_decoded_str)
+                     if len(my_decoded_str) > 0:
+                        players[1].rect.left = int(my_decoded_str)
+
+                        files_to_send = str(players[playerNum].rect.left)
+                        my_str_as_bytes = str.encode(files_to_send)
+                        type(my_str_as_bytes)  # ensure it is byte representation
+                        s.sendall(my_str_as_bytes)
+                        print("POSLATO:" + files_to_send)
+
+
+
+            #server.shutdown(socket.SHUT_RDWR)
+            #server.close()"""
 
 
 

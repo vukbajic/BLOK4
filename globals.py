@@ -12,8 +12,9 @@ RED = (255, 0, 0)
 GREEN = (0,255,0)
 YELLOW = (255,255,0)
 BALL_SIZE = (5, 10, 15, 30)
+BALL_SPEED = (3, 3.5, 4, 4.5)
 BALL_COLORS = (RED,GREEN,YELLOW,BLACK)
-PLAYER_SPEED = 7
+PLAYER_SPEED = 5
 PLAYER_HIGHT = 37
 PLAYER_WIDTH = 23
 WEAPON_SPEED = 20
@@ -31,6 +32,11 @@ multiplay = False
 level_ball_size = 3
 level_ball_count = 1
 players = []
+allowPower = True
+start_time = 0
+currentPower = None
+global online
+online = False
 
 bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")
 
