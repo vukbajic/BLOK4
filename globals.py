@@ -58,10 +58,10 @@ bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")
 
 
 gameDisplay = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
-pygame.display.set_caption('Bubble trouble')
+pygame.display.set_caption('Bubble trouble')    #naslov
 gameDisplay.fill(WHITE)
 a = pygame.image.load('images/icon.jpg')
-pygame.display.set_icon(a)
+pygame.display.set_icon(a)  #setovanje ikonice
 
 
 clock = pygame.time.Clock()

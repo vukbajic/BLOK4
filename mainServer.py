@@ -1,4 +1,3 @@
-MAIN_SERVER_ADDR = '192.168.1.8'
 import select, socket,queue
 from multiprocessing import Queue
 from multiprocessing import Process
@@ -14,16 +13,16 @@ class Client:
         self.num = -1
 
 
-def inputProcess(que,que2,server,inputs,outputs,message_queues):
+def inputProcess(que,que2,server,inputs,outputs,message_queues):    #proces koji ceka nove klijente i smesta ih u listu klijenata sa svim potrebnim podacima
     client_count = 0
     clients = []
     winners = []
     winner_count = 0
     while inputs:
-        readable, writable, exceptional = select.select(
+        readable, writable, exceptional = select.select(        #selekt funkcija, neblokirajuci rezim
             inputs, outputs, inputs)
         for s in readable:
-            if s is server:
+            if s is server:                                     # za svakog nobog klijenta otvara poseban soket
                 connection, client_address = s.accept()
                 connection.setblocking(0)
                 inputs.append(connection)
@@ -32,18 +31,18 @@ def inputProcess(que,que2,server,inputs,outputs,message_queues):
                 data = s.recv(1024)
                 c1 = Client()
 
-                my_decoded_str = data.decode()
+                my_decoded_str = data.decode()                  #dekodira primljene podatke( iz byte-oblika u string)
                 type(my_decoded_str)
 
 
-                if(len(my_decoded_str) > 0):
-                    pom = my_decoded_str.split("+")
+                if(len(my_decoded_str) > 0):                    #ako je nesto stiglo
+                    pom = my_decoded_str.split("+")             #oblik je poruka+port, ovde se razdvajaju
 
-                    temp = s.getpeername()
+                    temp = s.getpeername()                      #vraca adresu sa koje se klijent nakacio(nju prosledjujemo porivnickom igracu)
                     addr = temp[0]
 
                     print(len(pom))
-                    if len(pom) > 1:
+                    if len(pom) > 1:                            #popunjavamo klijent klasu i smestamo u odgovarajucu listu
                         c1.addr = addr
                         c1.port = int(pom[1])
                         c1.socket = s
@@ -68,7 +67,7 @@ def inputProcess(que,que2,server,inputs,outputs,message_queues):
                         print("port: " + str(client.port))
                         print("socket" + str(client.socket))
 
-                que.put([clients,client_count,pom[0]])
+                que.put([clients,client_count,pom[0]])                  #punimo redove za komunijaciju sa ostalim procesima
                 que2.put([winners,winner_count,pom[0]])
 
 
@@ -77,12 +76,13 @@ def gameProces(que):
     client_count = 0
     clients, client_count, msg = que.get()
     print("msg" + msg)
-    if msg == 'Online_game':
+    if msg == 'Online_game':                    #ako je poruka odgovarajuca, ceka se na dva igraca
         while client_count != 2:
-            clients, client_count, msg = que.get()
+            clients, client_count, msg = que.get()          #dok broj igraca ne bude dva, stalno se osluskuje queue
         c1 = clients[0]
         c2 = clients[1]
 
+        #nakon konektovanja oba igraca, vrsi se razmena njihovih adrssa i portova, radi medjusobne komunijacije tokom igre
         files_for_send = c2.addr + "+" + str(c2.port)
         my_str_as_bytes = str.encode(files_for_send)
         type(my_str_as_bytes)  # ensure it is byte representation
@@ -93,7 +93,7 @@ def gameProces(que):
         type(my_str_as_bytes)  # ensure it is byte representation
         c2.socket.send(my_str_as_bytes)
 
-    elif msg == "tournament":
+    elif msg == "tournament":               #princip za turnir je isti, samo sto radi a 4 igraca
         while client_count != 4:
             clients, client_count, msg = que.get()
 
@@ -124,7 +124,7 @@ def gameProces(que):
 
 
 
-def winnerAction(que):
+def winnerAction(que):                      #kada se jave dva pobednika u polu-finalu turnira, on ih "spaja" radi igranja finala
 
     winners,winner_count,msg = que.get()
 
@@ -148,7 +148,7 @@ def winnerAction(que):
 
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':              #iz mejna se pokrecu procesi
     que = Queue()
     que2 = Queue()
 

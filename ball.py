@@ -10,7 +10,7 @@ class Ball:
         self.new = True
         self.index = index
         self.image = pygame.image.load(image_name)
-        self.image = pygame.transform.scale(self.image,(int(round(50/(self.num+1),0)),int (round(50/(self.num+1),0))))
+        self.image = pygame.transform.scale(self.image,(int(round(50/(self.num+1),0)),int (round(50/(self.num+1),0))))  #smanjuje sliku(logika razlicitih velicina loptica(svaka duplo manja od prethodne))
         self.rect = self.image.get_rect()
         self.set_position(x, y)
 

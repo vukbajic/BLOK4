@@ -1,3 +1,4 @@
+#potrebne reference na spoljne biblioteke
 from player import *
 from ball import *
 import random
@@ -13,14 +14,16 @@ from client import *
 import socket,select,queue
 import multiprocessing
 import os
+
+#logika za iscrtavanje i pomeranje igraca
 #region player_logic
 #check = False
-def draw_player(player):
+def draw_player(player):                    #crta igraca i njegovo oruzije
     gameDisplay.blit(player.weapon.image, player.weapon.rect)
     gameDisplay.blit(player.image, player.rect) #ovo je da nacrtamo lika
 
 
-
+#na osnovu kliknutog dugmeta pomera jednog ili drugog igraca levo ili desno
 def moving(checkL, checkD, player):
 
     (x,y,z,g) = player.rect
@@ -99,25 +102,17 @@ def lifeNumber(players, multiplay):
         screen_text1 = font.render(life1, True, BLACK)
         gameDisplay.blit(screen_text1, [DISPLAY_WIDTH - 30, 515])
 
-#endregion
+#endregion  #
 
+#logika za iscrtavanje, pomeranje i deljenje lopte
 #region ball_logic
 def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam podelio na tri funkcije
-    """                                         #ovo je funkcija koja pravi lopte
-    Function to make a new, random ball.
-    """
+
     global index
-    #img = pygame.image.load('images/players/player.png')
+
     ball = Ball(num, index, corx, cory)
     index+=1
     gameDisplay.blit(ball.image,[corx,cory])
-
-    # Starting position of the ball.
-    # Take into account the ball size so we don't spawn on the edge.
-    #ball.x = corx
-    #ball.y = cory
-
-    # Speed and direction of rectangle
 
     ball.change_x = direction
     ball.change_y = BALL_SPEED[num]
@@ -133,11 +128,9 @@ def ballToList():                               #tu lopte kreiramo i ubacujemo u
     global level_ball_size,level_ball_count
 
     for i  in range(0,level_ball_count):
-        ball = make_ball(level_ball_size,350,350,1*-1^i)
+        ball = make_ball(level_ball_size,350,350,1*-1^i)    #pravi loptu odredjene velicine
         ball.new = False
         ball_list.append(ball)
-
-
 
     return ball_list
 
@@ -166,18 +159,18 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
 
 
             elif ball.num == 2:
-                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top< 300:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top < 300:
                     ball.change_y *= -1
                 if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
             elif ball.num == 3:
-                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top <  350:
+                if ball.rect.top > DISPLAY_HEIGHT - ball.rect.height - 55 or ball.rect.top < 350:
                     ball.change_y *= -1
                 if ball.rect.left > DISPLAY_WIDTH - ball.rect.width or ball.rect.left < ball.rect.width:
                     ball.change_x *= -1
 
-        if ball.num <= 3 and ball.new is True:
+        if ball.num <= 3 and ball.new is True:      #posle dve najvece loptice, nastavljaju tri,cetiri, pet najvecih loptica po nivou...
             if ball.num == 0:
                 if ball.rect.top > 200:
                     ball.new = False
@@ -194,12 +187,10 @@ def moveBall(ball_list):                        #samo ime kaze, lopte se krecu
     # Limit to 20 frames per second
     pygame.time.delay(20)
 
-def ballSplit(ball, ball_list, player):
+def ballSplit(ball, ball_list, player):             #brise lopticu iz liste i ubacuje dve manje
 
     player.score += 10
     ball_list.remove(ball_list[ball.index])
-
-
 
     for ball_temp in ball_list:
         if ball_temp.index > ball.index:
@@ -207,7 +198,7 @@ def ballSplit(ball, ball_list, player):
     global index
     index -= 1
 
-    if ball.num < 3:
+    if ball.num < 3:            #ako je pogodjena loptica najmanja, ne deli se, inace, deli na dve manje
         ball1 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, 1)
         ball_list.append(ball1)
         ball2 = make_ball(ball.num + 1, ball.rect.left, ball.rect.top, -1)
@@ -215,13 +206,14 @@ def ballSplit(ball, ball_list, player):
 
 
     global multiplay,online
-    if len(ball_list) == 0:
+    if len(ball_list) == 0:             #ako nema nsita u lisiti, znaci da je nivo gotov
         nextLevel(multiplay,online)
 
 
 
 #endregion
 
+#obrada sudaranja loptice i igraca i loptica i oruzja
 #region collision
 def crash(xP, yP, ball_List):                           #funkcija proverava da li je doslo do sudara izmedju lopte i lika
     for ball in ball_List:
@@ -258,8 +250,7 @@ def shot(player):
     return (x, y)
 
 
-def hit(ball_list, player):
-
+def hit(ball_list, player):     #proverava da li je lopta pogodjena
 
     for ball in ball_list:
         xW1 = player.weapon.rect.left
@@ -287,6 +278,7 @@ def hit(ball_list, player):
 
 #endregion
 
+#petlje koje pokrecu igru
 #region loops
 def gameLoopSingePlayer(ball_List,players, multiplay):
 
@@ -306,26 +298,26 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
     while NoCrash:
 
 
-        gameDisplay.blit(dock, (0, 500))
-        gameDisplay.blit(level.background, (0, 0))
-        gameDisplay.blit(siljci, (0, -5))
+
+        gameDisplay.blit(level.background, (0, 0))  #crta pozadinu
+        gameDisplay.blit(siljci, (0, -5))           # crta siljke
 
         # printovi su samo zbog lakseg dibaga
-        draw_player(players[0])
-        gameDisplay.blit(dock, (0, 500))
-        lifeNumber(players, multiplay)
-        sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
+        draw_player(players[0])                     #crta igraca
+        gameDisplay.blit(dock, (0, 500))            # crta dok
+        lifeNumber(players, multiplay)              #ispisuje broj zivota igraca
+        sc = font.render("Score  " + str(round(players[0].score)), True, BLACK) #ispisuje skor
         gameDisplay.blit(sc, (140, 520))
 
         # (x, y, c, d) = players[0].rect
-        movePlayer(players, multiplay)
-        shot(players[0])
-        moveBall(ball_List)
-        hit(ball_List, players[0])
+        movePlayer(players, multiplay)          #octivaa pomeranje igraca
+        shot(players[0])                        #proverava pucanje
+        moveBall(ball_List)                     #pomera loptu
+        hit(ball_List, players[0])              #proverava pogodak
 
 
 
-        NoCrash = crash(players[0].rect.left, players[0].rect.top, ball_List)
+        NoCrash = crash(players[0].rect.left, players[0].rect.top, ball_List)       #proverava da li je loptica pogodila igraca
         # ako dodje do sudara i lik ima jos zivota
         if not NoCrash and players[0].life > 1:
             if players[0].life == 2:
@@ -342,7 +334,7 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
             NoCrash = True
             ball_List = ballToList()
 
-        if timeOut and players[0].life > 0:
+        if timeOut and players[0].life > 0:         #ako je vreme isteklo....
             if players[0].life == 1:
                 massage_to_screen("Time out!", RED, -50, size = "large")
                 massage_to_screen("1 life remaining!", BLACK, 50, size="medium")  # menjao
@@ -389,7 +381,7 @@ def gameLoopSingePlayer(ball_List,players, multiplay):
                         ball_List = ballToList()
 
 
-        timer -= dt
+        timer -= dt             #smanji vreme svaki sekund
         if timer <= 0:
             if (players[0].life - 1 == 0):
                 timeOut = True
@@ -484,7 +476,8 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
         if not NoCrash2 and players[1].life > 1:
             if players[1].life == 3:
                 if players[0].life == 2:
-                    massage_to_screen(1 + " life remaining!", RED, -50, size="medium")  # menjao
+                    massage_to_screen(
+                        "1 life remaining!", RED, -50, size="medium")  # menjao
                     massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
                 else:
                     massage_to_screen(str(players[1].life - 1)  + " lifes remaining!", RED, -50, size="medium")  # menjao
@@ -825,6 +818,7 @@ def onlineGameLoop(ball_List, players,online,addr,port,playerNum):
 
 #endregion
 
+#pocetne funkcije
 #region start
 def start_screen():
     global nextlvl
@@ -877,86 +871,14 @@ def startTournament():
     tournament= True
     OnlineAction()
 
-def compareAddrs(addr1,addr2,enemyPort):
 
-    addrInt1 = int(re.sub('[.]', '', addr1))
-    addrInt2 = int(re.sub('[.]', '', addr2))
-
-    if addr1 == addr2:
-        if MY_PORT > int(enemyPort):
-            print("ISTE")
-            return 0
-        else:
-            return 1
-    elif addrInt1 > addrInt2:
-        print("0")
-        return 0
-    else:
-        print("1")
-        return 1
-
-
-def setUpConnection(playerNum,addr,port):
-
-    if playerNum == 0:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # server.setblocking(0)
-        server.bind((MY_ADDR, MY_PORT))
-        server.listen(5)
-
-        s, client_address = server.accept()
-
-        return s
-    else:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((addr,int(port)))
-
-        return  client
-
-def ExcangeCoords(s,players,playerNum):
-   
-    if playerNum == 0:
-        data = s.recv(1024)
-        my_decoded_str = data.decode()
-        type(my_decoded_str)
-
-        cords = my_decoded_str.split("+")
-
-        players[1].rect.left = int(cords[0])
-        players[1].score = int(cords[1])
-        players[1].life = int(cords[2])
-        players[1].weapon.rect.left = int(cords[3])
-        players[1].weapon.rect.right = int(cords[4])
-        players[1].weapon.rect.top = int(cords[5])
-
-        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(players[playerNum].weapon.rect.right) + "+" + str(players[playerNum].weapon.rect.top)
-        asbYte = str.encode(asStr)
-        type(asbYte)
-        s.sendall(asbYte)
-
-    else:
-        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(
-        players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(players[playerNum].weapon.rect.right) + "+" + str(
-        players[playerNum].weapon.rect.top)
-        asByte = str.encode(asStr)
-        print(asStr + "POSLAJO")
-        type(asByte)
-        s.sendall(asByte)
-
-        data1 = s.recv(1024)
-        asStr1 = data1.decode()
-        type(asStr1)
-        print(asStr1 + " PRIMIJO")
-        cords = asStr1.split("+")
-
-        players[0].rect.left = int(cords[0])
-        players[0].score = int(cords[1])
-        players[0].life = int(cords[2])
-        players[0].weapon.rect.left = int(cords[3])
-        players[0].weapon.rect.right = int(cords[4])
-        players[0].weapon.rect.top = int(cords[5])
-
-    return players
+def startOnline():
+    global enemyAddr,enemyPort
+    enemyAddr, enemyPort = connect("Online_game")
+    global players
+    players = [Player()]
+    players.append(Player('images/players/player2.png'))
+    OnlineAction()
 
 def setStartPosition(players, x):
     i = 0
@@ -1001,13 +923,7 @@ def MultiPlayerAction():
     gameLoopMultiPlayer(ball_List,players, multiPlay)
 
 
-def startOnline():
-    global enemyAddr,enemyPort
-    enemyAddr, enemyPort = connect("Online_game")
-    global players
-    players = [Player()]
-    players.append(Player('images/players/player2.png'))
-    OnlineAction()
+
 def OnlineAction():
 
     global online,enemyAddr,enemyPort
@@ -1023,6 +939,95 @@ def OnlineAction():
 
 #endregion
 
+#logika sa online-mode igrice
+#region onlineGame
+def setUpConnection(playerNum, addr, port): #vraca soket za komunijaciju sa protivniom
+    if playerNum == 0:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # server.setblocking(0)
+        server.bind((MY_ADDR, MY_PORT))
+        server.listen(5)
+
+        s, client_address = server.accept()
+
+        return s
+    else:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((addr, int(port)))
+
+        return client
+
+
+def ExcangeCoords(s, players, playerNum):       #razmena koordinata igraca i loptica, kao i skora i broja zivota u online modu
+    if playerNum == 0:
+        data = s.recv(1024)
+        my_decoded_str = data.decode()
+        type(my_decoded_str)
+
+        cords = my_decoded_str.split("+")
+
+        players[1].rect.left = int(cords[0])
+        players[1].score = int(cords[1])
+        players[1].life = int(cords[2])
+        players[1].weapon.rect.left = int(cords[3])
+        players[1].weapon.rect.right = int(cords[4])
+        players[1].weapon.rect.top = int(cords[5])
+
+        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(
+            players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(
+            players[playerNum].weapon.rect.right) + "+" + str(players[playerNum].weapon.rect.top)
+        asbYte = str.encode(asStr)
+        type(asbYte)
+        s.sendall(asbYte)
+
+    else:
+        asStr = str(players[playerNum].rect.left) + "+" + str(players[playerNum].score) + "+" + str(
+            players[playerNum].life) + "+" + str(players[playerNum].weapon.rect.left) + "+" + str(
+            players[playerNum].weapon.rect.right) + "+" + str(
+            players[playerNum].weapon.rect.top)
+        asByte = str.encode(asStr)
+        print(asStr + "POSLAJO")
+        type(asByte)
+        s.sendall(asByte)
+
+        data1 = s.recv(1024)
+        asStr1 = data1.decode()
+        type(asStr1)
+        print(asStr1 + " PRIMIJO")
+        cords = asStr1.split("+")
+
+        players[0].rect.left = int(cords[0])
+        players[0].score = int(cords[1])
+        players[0].life = int(cords[2])
+        players[0].weapon.rect.left = int(cords[3])
+        players[0].weapon.rect.right = int(cords[4])
+        players[0].weapon.rect.top = int(cords[5])
+
+    return players
+
+def compareAddrs(addr1,addr2,enemyPort):                #odredjue redni broj igraca na osnovu adrese ili porta
+
+    addrInt1 = int(re.sub('[.]', '', addr1))
+    addrInt2 = int(re.sub('[.]', '', addr2))
+
+    if addr1 == addr2:                      #sluzi samo za testiranje na isom racunaru(ako je adresa ista, igrac sa vecim portom je prvi i server u komunijaciji
+        if MY_PORT > int(enemyPort):
+            print("ISTE")
+            return 0
+        else:
+            return 1
+    elif addrInt1 > addrInt2:                #veca adresa - igrac 1
+        print("0")
+        return 0
+    else:
+        print("1")
+        return 1
+
+
+
+#endregion
+
+#zajednicke metode
 #region common
 def pause():
     checkPause = False

@@ -16,7 +16,7 @@ class power():
     def set_position(self, x=500, y=500):
             self.rect.centerx, self.rect.bottom = x, y
 
-def generatePowerList():
+def generatePowerList():        #generise neki od bonusa po verovatnoci 1:1:2
     powers = []
     power1 = power(lifePowerImage)
     power1.name = "life"
@@ -33,7 +33,7 @@ def generatePowerList():
 
     return powers
 
-def generateRandomPower(timer,players):
+def generateRandomPower(timer,players):     #na svakih 10 sekindu na slcuajnom mestu definise "slucajan" bonus
     powers = generatePowerList()
     global gameDisplay,allowPower,start_time,currentPower,TIME_PER_LEVEL
     timer = int(timer)
@@ -50,7 +50,7 @@ def generateRandomPower(timer,players):
             allowPower = False
 
     else:
-        gameDisplay.blit(currentPower.image, currentPower.rect)  # ovo je da nacrtamo lika
+        gameDisplay.blit(currentPower.image, currentPower.rect)  # iscrtava bonus na ekran
         allowPower = False
         if start_time - int(timer) >= 4:
             allowPower = True
@@ -65,7 +65,7 @@ def generateRandomPower(timer,players):
 
 
 
-def checkCoordinates(currentPower,players):
+def checkCoordinates(currentPower,players): #proverava da li je neki od likova "sakupio" bonus
 
     global  start_time
 
@@ -88,17 +88,15 @@ def checkCoordinates(currentPower,players):
 
     return False,None
 
-def applayPower(power,player,timer):
+def applayPower(power,player,timer):        #u slucaju "sakupljanja", primenjuje bonus na igraca
     global allowPower
     allowPower = True
     if power.name == "life":
         player.life += 1
     elif power.name == "time":
-        return  True
+        return True
     elif power.name == "score":
         player.score += 50
 
-
-
-    return  False
+    return False
 
