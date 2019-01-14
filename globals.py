@@ -4,6 +4,9 @@ from math import sin
 
 
 #sve ono sto nam treba a da bude globalno
+MAIN_SERVER_ADDR = '192.168.100.214'
+MY_PORT = 502
+MY_ADDR = '192.168.100.214'
 DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 550
 BLACK = (0,0,0)
@@ -38,6 +41,8 @@ currentPower = None
 global online
 online = False
 
+global tournament
+tournament= False
 bg_one_color = pygame.image.load("images/backgrounds/one_color_background.jpg")
 
 

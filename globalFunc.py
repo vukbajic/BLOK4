@@ -11,7 +11,8 @@ from messageBox import *
 from powers import *
 from client import *
 import socket,select,queue
-
+import multiprocessing
+import os
 #region player_logic
 #check = False
 def draw_player(player):
@@ -132,7 +133,7 @@ def ballToList():                               #tu lopte kreiramo i ubacujemo u
     global level_ball_size,level_ball_count
 
     for i  in range(0,level_ball_count):
-        ball = make_ball(level_ball_size,150,350,1*-1^i)
+        ball = make_ball(level_ball_size,350,350,1*-1^i)
         ball.new = False
         ball_list.append(ball)
 
@@ -436,20 +437,19 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
     while NoCrash1 and NoCrash2:
 
 
-        gameDisplay.blit(dock, (0, 500))
         gameDisplay.blit(level.background, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
-        lifeNumber(players, multiplay)
+
         # printovi su samo zbog lakseg dibaga
         draw_player(players[0])
-        sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
-        gameDisplay.blit(sc, (140, 520))
-
-
-
         draw_player(players[1])
+
+        gameDisplay.blit(dock, (0, 500))
+        lifeNumber(players, multiplay)
+        sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
         sc2 = font.render("Score  " + str(round(players[1].score)), True, BLACK)
-        gameDisplay.blit(sc2, (DISPLAY_WIDTH-260, 520))
+        gameDisplay.blit(sc, (140, 520))
+        gameDisplay.blit(sc2, (DISPLAY_WIDTH - 260, 520))
 
         #(x, y, c, d) = players[0].rect
         movePlayer(players, multiplay)
@@ -602,6 +602,7 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
     quit()
 
 
+
 def onlineGameLoop(ball_List, players,online,addr,port,playerNum):
     NoCrash1 = True
     NoCrash2 = True
@@ -625,16 +626,20 @@ def onlineGameLoop(ball_List, players,online,addr,port,playerNum):
         ExcangeCoords(soc, players, playerNum)
         #pygame.display.update()
 
-        gameDisplay.blit(dock, (0, 500))
+
         gameDisplay.blit(level.background, (0, 0))
         gameDisplay.blit(siljci, (0, -5))
-        lifeNumber(players, multiplay)
-        # printovi su samo zbog lakseg dibaga
+
         draw_player(players[0])
+        draw_player(players[1])
+
+        gameDisplay.blit(dock, (0, 500))
+        lifeNumber(players, multiplay)
+
+
         sc = font.render("Score  " + str(round(players[0].score)), True, BLACK)
         gameDisplay.blit(sc, (140, 520))
 
-        draw_player(players[1])
         sc2 = font.render("Score  " + str(round(players[1].score)), True, BLACK)
         gameDisplay.blit(sc2, (DISPLAY_WIDTH - 260, 520))
 
@@ -703,49 +708,86 @@ def onlineGameLoop(ball_List, players,online,addr,port,playerNum):
 
         while gameOver1 or gameOver2:
 
-            gameDisplay.blit(dock, (0, 500))
-            gameDisplay.blit(level.background, (0, 0))
-            massage_to_screen("Game over", RED, -50, size="large")  # menjao
-            massage_to_screen("Press C to play again or ESC to quit", BLACK, 50, size="small")  # menjao
+            global tournament
+            if tournament is not True:
+                gameDisplay.blit(dock, (0, 500))
+                gameDisplay.blit(level.background, (0, 0))
+                massage_to_screen("Game over", RED, -50, size="large")  # menjao
+                massage_to_screen("Press C to play again or ESC to quit", BLACK, 50, size="small")  # menjao
 
-            timer = TIME_PER_LEVEL
+                timer = TIME_PER_LEVEL
 
-            if players[0].life == players[1].life:
-                massage_to_screen_down("DRAW", RED)
-            elif players[0].life < players[1].life:
-                massage_to_screen_down("PLAYER 2 WINS", RED)
+                if players[0].life == players[1].life:
+                    massage_to_screen_down("DRAW", RED)
+                elif players[0].life < players[1].life:
+                    massage_to_screen_down("PLAYER 2 WINS", RED)
+                else:
+                    massage_to_screen_down("PLAYER 1 WINS", RED)
+
+                pygame.display.update()
+
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            NoCrash1 = False
+                            gameOver1 = False
+                            NoCrash2 = False
+                            gameOver2 = False
+                        if event.key == pygame.QUIT:
+                            NoCrash1 = False
+                            gameOver1 = False
+                            NoCrash2 = False
+                            gameOver2 = False
+                        if event.key == pygame.K_c:
+                            print('C')
+                            NoCrash1 = True
+                            NoCrash2 = True
+                            gameOver1 = False
+                            gameOver2 = False
+                            players[0].life = LIFE
+                            players[1].life = LIFE
+                            level.number = 1
+                            level_ball_size = 3
+                            level_ball_count = 1
+                            players[0].score = 0
+                            players[1].score = 0
+                            setStartPosition(players, -18)
+                            ball_List = ballToList()
             else:
-                massage_to_screen_down("PLAYER 1 WINS", RED)
+                if playerNum == 0 and gameOver2 or playerNum == 1 and gameOver1:
+                    gameDisplay.blit(dock, (0, 500))
+                    gameDisplay.blit(level.background, (0, 0))
+                    massage_to_screen("You win", RED, -50, size="large")  # menjao
 
-            pygame.display.update()
+                    timer = TIME_PER_LEVEL
 
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        NoCrash1 = False
-                        gameOver1 = False
-                        NoCrash2 = False
-                        gameOver2 = False
-                    if event.key == pygame.QUIT:
-                        NoCrash1 = False
-                        gameOver1 = False
-                        NoCrash2 = False
-                        gameOver2 = False
-                    if event.key == pygame.K_c:
-                        print('C')
-                        NoCrash1 = True
-                        NoCrash2 = True
-                        gameOver1 = False
-                        gameOver2 = False
-                        players[0].life = LIFE
-                        players[1].life = LIFE
-                        level.number = 1
-                        level_ball_size = 3
-                        level_ball_count = 1
-                        players[0].score = 0
-                        players[1].score = 0
-                        setStartPosition(players, -18)
-                        ball_List = ballToList()
+                    if players[0].life == players[1].life:
+                        massage_to_screen_down("DRAW", RED)
+                    elif players[0].life < players[1].life:
+                        massage_to_screen_down("PLAYER 2 WINS", RED)
+                    else:
+                        massage_to_screen_down("PLAYER 1 WINS", RED)
+
+                    pygame.display.update()
+                    print("Winner")
+                    startTournament()
+
+                else:
+                    gameDisplay.blit(dock, (0, 500))
+                    gameDisplay.blit(level.background, (0, 0))
+                    massage_to_screen("Game over", RED, -50, size="large")  # menjao
+                    massage_to_screen("Press C to play again or ESC to quit", BLACK, 50, size="small")  # menjao
+
+                    timer = TIME_PER_LEVEL
+
+                    if players[0].life == players[1].life:
+                        massage_to_screen_down("DRAW", RED)
+                    elif players[0].life < players[1].life:
+                        massage_to_screen_down("PLAYER 2 WINS", RED)
+                    else:
+                        massage_to_screen_down("PLAYER 1 WINS", RED)
+
+                    pygame.display.update()
 
         timer -= dt
         if timer <= 0:
@@ -814,7 +856,7 @@ def start_screen():
 
         button("1 Player",630,20,140,50,YELLOW,RED,SinglePlayerAction)
         button("2 Players", 630, 85, 140, 50, YELLOW, RED,MultiPlayerAction)
-        button("Tournamet", 630, 150, 140, 50, YELLOW, RED)
+        button("Tournamet", 630, 150, 140, 50, YELLOW, RED,startTournament)
         button("Online", 630, 215, 140, 50, YELLOW, RED,startOnline)
 
 
@@ -822,16 +864,35 @@ def start_screen():
 
 
 
+def startTournament():
+    global enemyAddr, enemyPort
+    global tournament
+    if tournament:
+        enemyAddr, enemyPort = connect("Winner")
+    else:
+        enemyAddr, enemyPort = connect("tournament")
+    global players
+    players = [Player()]
+    players.append(Player('images/players/player2.png'))
+    tournament= True
+    OnlineAction()
 
-
-def compareAddrs(addr1,addr2):
+def compareAddrs(addr1,addr2,enemyPort):
 
     addrInt1 = int(re.sub('[.]', '', addr1))
     addrInt2 = int(re.sub('[.]', '', addr2))
 
-    if addrInt1 > addrInt2:
+    if addr1 == addr2:
+        if MY_PORT > int(enemyPort):
+            print("ISTE")
+            return 0
+        else:
+            return 1
+    elif addrInt1 > addrInt2:
+        print("0")
         return 0
     else:
+        print("1")
         return 1
 
 
@@ -840,7 +901,7 @@ def setUpConnection(playerNum,addr,port):
     if playerNum == 0:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # server.setblocking(0)
-        server.bind(('192.168.100.214', 502))
+        server.bind((MY_ADDR, MY_PORT))
         server.listen(5)
 
         s, client_address = server.accept()
@@ -905,8 +966,6 @@ def setStartPosition(players, x):
         i += 1
 
 
-
-
 def SinglePlayerAction():
     global nextlvl, players, multiPlay
     if nextlvl is not True:
@@ -944,7 +1003,7 @@ def MultiPlayerAction():
 
 def startOnline():
     global enemyAddr,enemyPort
-    enemyAddr, enemyPort = connect()
+    enemyAddr, enemyPort = connect("Online_game")
     global players
     players = [Player()]
     players.append(Player('images/players/player2.png'))
@@ -955,10 +1014,12 @@ def OnlineAction():
     online = True
     global players
     ball_List = ballToList()
-    playerNum = compareAddrs('192.168.100.214',enemyAddr)
+
+    addr = socket.gethostbyname(socket.gethostname())  # vraca ip adresu racunaras
+    #addr = '127.0.0.1'  # vraca ip adresu racunaras
+    playerNum = compareAddrs(MY_ADDR,enemyAddr,enemyPort)
 
     onlineGameLoop(ball_List,players,online,enemyAddr,enemyPort,playerNum)
-
 
 #endregion
 
@@ -1027,41 +1088,3 @@ def nextLevel(multiplay,online):
         SinglePlayerAction()
 
 #endregion
-
-
-
-
-
-    """ inputs = [server]
-
-        while inputs:
-            readable, writable, exceptional = select.select(
-                inputs, outputs, inputs)
-            for s in readable:
-                if s is server:
-                    connection, client_address = s.accept()
-                    connection.setblocking(0)
-                    inputs.append(connection)
-                    message_queues[connection] = queue.Queue()
-                else:
-                     data = s.recv(1024)
-                     my_decoded_str = data.decode()
-                     type(my_decoded_str)
-
-                     print("PRIMLJENO " + my_decoded_str)
-                     if len(my_decoded_str) > 0:
-                        players[1].rect.left = int(my_decoded_str)
-
-                        files_to_send = str(players[playerNum].rect.left)
-                        my_str_as_bytes = str.encode(files_to_send)
-                        type(my_str_as_bytes)  # ensure it is byte representation
-                        s.sendall(my_str_as_bytes)
-                        print("POSLATO:" + files_to_send)
-
-
-
-            #server.shutdown(socket.SHUT_RDWR)
-            #server.close()"""
-
-
-
