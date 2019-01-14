@@ -1,5 +1,5 @@
 from globals import *
-#klasa lopte, to sam kopirao sa vaseg koda
+#klasa lopte
 class Ball:
     def __init__(self,number,index, x, y, image_name='images/balls/ball.png'):
         self.x = 0

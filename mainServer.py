@@ -3,8 +3,6 @@ from multiprocessing import Queue
 from multiprocessing import Process
 import  time
 
-
-
 class Client:
     def __init__(self):
         self.addr = ""
@@ -22,7 +20,7 @@ def inputProcess(que,que2,server,inputs,outputs,message_queues):    #proces koji
         readable, writable, exceptional = select.select(        #selekt funkcija, neblokirajuci rezim
             inputs, outputs, inputs)
         for s in readable:
-            if s is server:                                     # za svakog nobog klijenta otvara poseban soket
+            if s is server:                                     # za svakog novog klijenta otvara poseban soket
                 connection, client_address = s.accept()
                 connection.setblocking(0)
                 inputs.append(connection)

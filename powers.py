@@ -58,11 +58,7 @@ def generateRandomPower(timer,players):     #na svakih 10 sekindu na slcuajnom m
         if check:
              timerCheck = applayPower(currentPower,player,timer)
 
-
-
     return  timerCheck
-
-
 
 
 def checkCoordinates(currentPower,players): #proverava da li je neki od likova "sakupio" bonus

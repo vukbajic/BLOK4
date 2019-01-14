@@ -84,14 +84,14 @@ def movePlayer(players, multiplay):
     if multiplay:
         moving(checkL2, checkD2, players[1])
 
-def weaponBack(player):
+def weaponBack(player):                     #kad oruzije udari u vrh ili se sudari s lopticom nestane i vrati se na sredinu igraca
     player.weapon.rect = player.rect
     player.weapon.rect = player.weapon.rect.move(7, 0)
     player.weapon.isActive = True
     global checkSplit
     checkSplit = True
 
-def lifeNumber(players, multiplay):
+def lifeNumber(players, multiplay):         #crtanje broja zivota na ekranu
     life = players[0].life.__str__()
     font = pygame.font.SysFont(None, NUMBERLIFES_FONT_SIZE)
     screen_text = font.render(life, True, BLACK)
@@ -106,7 +106,7 @@ def lifeNumber(players, multiplay):
 
 #logika za iscrtavanje, pomeranje i deljenje lopte
 #region ball_logic
-def make_ball(num,corx,cory,direction):         #ovo je vasa funkcija koju sam podelio na tri funkcije
+def make_ball(num,corx,cory,direction):         #kreiranje lopte
 
     global index
 
@@ -257,8 +257,8 @@ def hit(ball_list, player):     #proverava da li je lopta pogodjena
         yW1 = player.weapon.rect.top
         xW2 = player.weapon.rect.right
 
-        xB1 = ball.rect.left             # x koordinata lopte
-        yB1 = ball.rect.bottom - (ball.rect.height /(2 / (ball.num+1)))                                  # y koordinata
+        xB1 = ball.rect.left                                                  # x koordinata lopte
+        yB1 = ball.rect.bottom - (ball.rect.height /(2 / (ball.num+1)))       # y koordinata
         xB2 = ball.rect.right
 
         global checkSplit
@@ -457,11 +457,11 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
         #ako dodje do sudara i lik ima jos zivota
         if not NoCrash1 and players[0].life >1:
             if players[0].life == 2:
-                massage_to_screen("1 life remaining!", RED, -50, size="medium")  # menjao
-                massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
+                massage_to_screen("1 life remaining!", RED, -50, size="medium")
+                massage_to_screen("Be careful next time!", BLACK, 50, size="small")
             else:
-                massage_to_screen(str(players[0].life - 1) +  " lifes remaining!", RED, -50, size="medium")  # menjao
-                massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
+                massage_to_screen(str(players[0].life - 1) +  " lifes remaining!", RED, -50, size="medium")
+                massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")
             timer = TIME_PER_LEVEL
             pygame.display.update()
             pygame.time.delay(1000)
@@ -477,11 +477,11 @@ def gameLoopMultiPlayer(ball_List, players, multiplay):
             if players[1].life == 3:
                 if players[0].life == 2:
                     massage_to_screen(
-                        "1 life remaining!", RED, -50, size="medium")  # menjao
-                    massage_to_screen("Be careful next time!", BLACK, 50, size="small")  # menjao
+                        "1 life remaining!", RED, -50, size="medium")
+                    massage_to_screen("Be careful next time!", BLACK, 50, size="small")
                 else:
-                    massage_to_screen(str(players[1].life - 1)  + " lifes remaining!", RED, -50, size="medium")  # menjao
-                    massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")  # menjao
+                    massage_to_screen(str(players[1].life - 1)  + " lifes remaining!", RED, -50, size="medium")
+                    massage_to_screen("Be careful next time or you lose!", BLACK, 50, size="small")
             pygame.display.update()
             timer = TIME_PER_LEVEL
             pygame.time.delay(1000)
@@ -941,7 +941,7 @@ def OnlineAction():
 
 #logika sa online-mode igrice
 #region onlineGame
-def setUpConnection(playerNum, addr, port): #vraca soket za komunijaciju sa protivniom
+def setUpConnection(playerNum, addr, port): #vraca soket za komunijaciju sa protivnikom
     if playerNum == 0:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # server.setblocking(0)
