@@ -4,9 +4,20 @@ from math import sin
 
 
 #sve ono sto nam treba a da bude globalno
-MAIN_SERVER_ADDR = '192.168.100.214'
-MY_PORT = 502
-MY_ADDR = '192.168.100.214'
+file = open("configuration.txt","r")
+temp = file.readlines()
+
+MAIN_SERVER_ADDR = temp[0].split("=")
+MAIN_SERVER_ADDR = MAIN_SERVER_ADDR[1]
+
+MY_ADDR = temp[1].split("=")
+MY_ADDR = MY_ADDR[1]
+
+MY_PORT = temp[2].split("=")
+MY_PORT = int(MY_PORT[1])
+print("SERVER: " + MAIN_SERVER_ADDR)
+print("MY ADDR " + MY_ADDR)
+print("PORT " + str(MY_PORT))
 DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 550
 BLACK = (0,0,0)
